@@ -230,6 +230,9 @@ describe('App authentication, routing, and role-based navigation', () => {
       if (url === '/api/v1/auth/session') {
         return jsonResponse({ userId: 'owner-uuid', name: 'Shop Owner', role: 'OWNER' });
       }
+      if (url.startsWith('/api/v1/categories') || url.startsWith('/api/v1/skus')) {
+        return jsonResponse({ items: [], page: 0, size: 25, total: 0 });
+      }
       if (url === '/api/v1/test/operational') {
         return jsonResponse(
           { code: 'AUTH_REQUIRED', message: 'Authentication required', requestId: 'req-exp' },

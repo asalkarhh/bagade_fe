@@ -62,17 +62,22 @@ The app will be available at `http://localhost:5173`. Vite proxies `/api` reques
 | `npm test` | Run Vitest unit and UI integration test suite |
 | `npm run preview` | Preview the production build locally on port `4173` |
 
-## Implemented Routes (FE01)
+## Implemented Routes
 
 | Route | Access | Status |
 | --- | --- | --- |
-| `/login` | Unauthenticated users | Sign-in form with CSRF bootstrap |
-| `/` | Authenticated users | Redirects to `/billing` |
+| `/login` | Unauthenticated users | Sign-in form with CSRF bootstrap (FE01) |
+| `/` | Authenticated users | Redirects to `/billing` (FE01) |
+| `/products` | `OWNER`, `WORKER` | Working product catalog, categories, size variants, INR price & status updates (FE02) |
 | `/billing` | `OWNER`, `WORKER` | Placeholder (pending) |
-| `/products` | `OWNER`, `WORKER` | Placeholder (pending) |
 | `/purchases` | `OWNER`, `WORKER` | Placeholder (pending) |
 | `/inventory` | `OWNER`, `WORKER` | Placeholder (pending) |
 | `/customers` | `OWNER`, `WORKER` | Placeholder (pending) |
 | `/expenses` | `OWNER`, `WORKER` | Placeholder (pending) |
 | `/reports` | `OWNER` only | Placeholder (pending; shows Access Denied for `WORKER`) |
 | `/what-to-buy` | `OWNER` only | Placeholder (pending; shows Access Denied for `WORKER`) |
+
+## Backend API Dependencies Noted in FE02
+
+- `GET /api/v1/skus` (`SkuListItemResponse`) does not yet return `productId`, and `GET /api/v1/products` does not exist. The frontend retains `productId` from `POST /api/v1/products` and `PATCH /api/v1/skus/{id}` within the session and reads `productId` from `GET /api/v1/skus` if provided, without inferring product identity from name or SKU code.
+- `GET /api/v1/skus` treats an omitted `active` query param as `active=true`; when the **All** status filter is selected, the frontend merges `active=true` and `active=false` queries.
