@@ -4,6 +4,7 @@ import './Purchasing.css';
 export function PurchasesLayout() {
   const location = useLocation();
   const isCreateRoute = location.pathname === '/purchases/new';
+  const isDirectReceiveRoute = location.pathname === '/purchases/receive';
 
   return (
     <div className="purchases-shell">
@@ -23,11 +24,18 @@ export function PurchasesLayout() {
           </ul>
         </nav>
 
-        {!isCreateRoute ? (
-          <Link to="/purchases/new" className="btn-primary">
-            New Purchase Order
-          </Link>
-        ) : null}
+        <div className="products-header__actions">
+          {!isDirectReceiveRoute ? (
+            <Link to="/purchases/receive" className="btn-secondary">
+              Direct Receipt
+            </Link>
+          ) : null}
+          {!isCreateRoute ? (
+            <Link to="/purchases/new" className="btn-primary">
+              New Purchase Order
+            </Link>
+          ) : null}
+        </div>
       </div>
 
       <Outlet />

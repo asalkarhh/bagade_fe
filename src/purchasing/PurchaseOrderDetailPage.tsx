@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { isAbortError, isApiClientError } from '../api/errors.ts';
+import { useRecentSessionReceipts } from '../inventory/sessionReceipts.ts';
 import { formatInrDisplay } from '../utils/inrPrice.ts';
 import { CancelRemainderModal } from './components/CancelRemainderModal.tsx';
 import { purchasingApi, type PurchasingApi } from './purchasingApi.ts';
@@ -73,6 +74,7 @@ export function PurchaseOrderDetailPage({ api = purchasingApi }: PurchaseOrderDe
     }
   }, [api, poId]);
 
+  const recentReceipts = useRecentSessionReceipts().filter((r) => r.poId === poId);
   const isLoading = Boolean(poId) && detailState?.poId !== poId;
   const po = detailState?.poId === poId ? detailState.po : null;
   const loadError = detailState?.poId === poId ? detailState.error : null;
@@ -144,16 +146,39 @@ export function PurchaseOrderDetailPage({ api = purchasingApi }: PurchaseOrderDe
 
         <div className="products-header__actions">
           {canCancelRemainder ? (
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={() => setIsCancelModalOpen(true)}
-            >
-              Cancel Remaining Quantity
-            </button>
+            <>
+              <Link to={`/purchases/${po.poId}/receive`} className="btn-primary">
+                Receive Stock
+              </Link>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setIsCancelModalOpen(true)}
+              >
+                Cancel Remaining Quantity
+              </button>
+            </>
           ) : null}
         </div>
       </div>
+
+      {recentReceipts.length > 0 ? (
+        <section className="surface-card" aria-label="Posted receipts for this purchase order">
+          <div className="catalog-added-list">
+            <span className="catalog-added-list__title">Posted receipts in this session</span>
+            <ul>
+              {recentReceipts.map((rcp) => (
+                <li key={rcp.receiptId}>
+                  <Link to={`/inventory/receipts/${rcp.receiptId}`} className="po-link">
+                    {rcp.receiptNumber}
+                  </Link>{' '}
+                  — {rcp.totalUnits} unit{rcp.totalUnits === 1 ? '' : 's'} on {rcp.receivedDate}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      ) : null}
 
       {statusNotice ? (
         <div className="alert-banner alert-banner--info" role="status">

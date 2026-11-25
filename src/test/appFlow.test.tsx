@@ -96,6 +96,10 @@ function createTestHarness(initialState?: Partial<MockServerState>) {
       return new Response(null, { status: 204 });
     }
 
+    if (url.startsWith('/api/v1/categories') || url.startsWith('/api/v1/inventory')) {
+      return jsonResponse({ items: [], page: 0, size: 25, total: 0 });
+    }
+
     throw new Error(`Unhandled request: ${method} ${url}`);
   });
 

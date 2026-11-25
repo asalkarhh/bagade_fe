@@ -73,8 +73,11 @@ The app will be available at `http://localhost:5173`. Vite proxies `/api` reques
 | `/purchases` | `OWNER`, `WORKER` | Working Purchase Orders list with vendor, status, and date filters (FE03) |
 | `/purchases/vendors` | `OWNER`, `WORKER` | Working Vendors list & creation with Active/Inactive/All filter (FE03) |
 | `/purchases/new` | `OWNER`, `WORKER` | Create Purchase Order with inline vendor creation & SKU picker (FE03) |
-| `/purchases/:poId` | `OWNER`, `WORKER` | Purchase Order detail view & Cancel Remaining Quantity workflow (FE03) |
-| `/inventory` | `OWNER`, `WORKER` | Placeholder (pending) |
+| `/purchases/:poId` | `OWNER`, `WORKER` | Purchase Order detail view, Receive Stock action & Cancel Remaining Quantity workflow (FE03/FE04) |
+| `/purchases/receive` | `OWNER`, `WORKER` | Direct Stock Receipt without a PO with barcode scan & SKU linking (FE04) |
+| `/purchases/:poId/receive` | `OWNER`, `WORKER` | Receive Stock against an open Purchase Order (FE04) |
+| `/inventory` | `OWNER`, `WORKER` | Working inventory stock balances, category/SKU filtering, expandable batches & tag reprinting (FE04) |
+| `/inventory/receipts/:receiptId` | `OWNER`, `WORKER` | Posted Stock Receipt view with batch tag generation and Code 128 print preview (FE04) |
 | `/customers` | `OWNER`, `WORKER` | Placeholder (pending) |
 | `/expenses` | `OWNER`, `WORKER` | Placeholder (pending) |
 | `/reports` | `OWNER` only | Placeholder (pending; shows Access Denied for `WORKER`) |

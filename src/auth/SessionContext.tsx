@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { apiClient, type ApiClient } from '../api/client.ts';
 import { isAbortError, isApiClientError, type ApiClientError } from '../api/errors.ts';
+import { clearSessionReceipts } from '../inventory/sessionReceipts.ts';
 import { authApi, createAuthApi, type AuthApi } from './authApi.ts';
 import type { AuthSession, AuthStatus, LoginCredentials } from './types.ts';
 import { SessionContext, type SessionContextValue } from './useSession.ts';
@@ -106,6 +107,7 @@ export function SessionProvider({
   useEffect(() => {
     return client.setUnauthorizedHandler(() => {
       restoreIdRef.current += 1;
+      clearSessionReceipts();
       setSession(null);
       setStatus('unauthenticated');
       setSessionError(null);
@@ -173,6 +175,7 @@ export function SessionProvider({
       try {
         await resolvedAuthApi.signOut();
         restoreIdRef.current += 1;
+        clearSessionReceipts();
         setSuppressNextReturnTo(true);
         setSession(null);
         setStatus('unauthenticated');
