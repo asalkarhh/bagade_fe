@@ -70,7 +70,10 @@ The app will be available at `http://localhost:5173`. Vite proxies `/api` reques
 | `/` | Authenticated users | Redirects to `/billing` (FE01) |
 | `/products` | `OWNER`, `WORKER` | Working product catalog, categories, size variants, INR price & status updates (FE02) |
 | `/billing` | `OWNER`, `WORKER` | Placeholder (pending) |
-| `/purchases` | `OWNER`, `WORKER` | Placeholder (pending) |
+| `/purchases` | `OWNER`, `WORKER` | Working Purchase Orders list with vendor, status, and date filters (FE03) |
+| `/purchases/vendors` | `OWNER`, `WORKER` | Working Vendors list & creation with Active/Inactive/All filter (FE03) |
+| `/purchases/new` | `OWNER`, `WORKER` | Create Purchase Order with inline vendor creation & SKU picker (FE03) |
+| `/purchases/:poId` | `OWNER`, `WORKER` | Purchase Order detail view & Cancel Remaining Quantity workflow (FE03) |
 | `/inventory` | `OWNER`, `WORKER` | Placeholder (pending) |
 | `/customers` | `OWNER`, `WORKER` | Placeholder (pending) |
 | `/expenses` | `OWNER`, `WORKER` | Placeholder (pending) |
