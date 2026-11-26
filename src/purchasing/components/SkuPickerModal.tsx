@@ -8,6 +8,7 @@ import { formatInrDisplay } from '../../utils/inrPrice.ts';
 export interface SkuPickerModalProps {
   open: boolean;
   api: CatalogApi;
+  initialQuery?: string;
   onClose: () => void;
   onSelect: (sku: SkuListItem) => void;
 }
@@ -23,14 +24,16 @@ interface SkuPickerState {
 
 function SkuPickerContent({
   api,
+  initialQuery = '',
   onSelect,
 }: {
   api: CatalogApi;
+  initialQuery?: string;
   onSelect: (sku: SkuListItem) => void;
 }) {
   const searchId = useId();
-  const [searchInput, setSearchInput] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [searchInput, setSearchInput] = useState(initialQuery);
+  const [debouncedQuery, setDebouncedQuery] = useState(initialQuery.trim());
   const [page, setPage] = useState(0);
   const [refreshTick, setRefreshTick] = useState(0);
   const [resultState, setResultState] = useState<SkuPickerState | null>(null);
@@ -244,10 +247,16 @@ function SkuPickerContent({
   );
 }
 
-export function SkuPickerModal({ open, api, onClose, onSelect }: SkuPickerModalProps) {
+export function SkuPickerModal({
+  open,
+  api,
+  initialQuery = '',
+  onClose,
+  onSelect,
+}: SkuPickerModalProps) {
   return (
     <ModalDialog open={open} title="Select active SKU" onClose={onClose}>
-      {open ? <SkuPickerContent api={api} onSelect={onSelect} /> : null}
+      {open ? <SkuPickerContent key={initialQuery} api={api} initialQuery={initialQuery} onSelect={onSelect} /> : null}
     </ModalDialog>
   );
 }

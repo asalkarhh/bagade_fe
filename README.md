@@ -69,7 +69,9 @@ The app will be available at `http://localhost:5173`. Vite proxies `/api` reques
 | `/login` | Unauthenticated users | Sign-in form with CSRF bootstrap (FE01) |
 | `/` | Authenticated users | Redirects to `/billing` (FE01) |
 | `/products` | `OWNER`, `WORKER` | Working product catalog, categories, size variants, INR price & status updates (FE02) |
-| `/billing` | `OWNER`, `WORKER` | Placeholder (pending) |
+| `/billing` | `OWNER`, `WORKER` | Working counter POS with barcode/camera/product lookup, differing-MRP batch picker, Cash/UPI/credit payments, idempotent checkout & 80 mm printing (FE05) |
+| `/billing/history` | `OWNER`, `WORKER` | Issued bills search by bill number, date range & customer filter with pagination (FE05) |
+| `/billing/:billId` | `OWNER`, `WORKER` | Bill snapshot detail, revision selector, 80 mm print view & PDF receipt download (FE05) |
 | `/purchases` | `OWNER`, `WORKER` | Working Purchase Orders list with vendor, status, and date filters (FE03) |
 | `/purchases/vendors` | `OWNER`, `WORKER` | Working Vendors list & creation with Active/Inactive/All filter (FE03) |
 | `/purchases/new` | `OWNER`, `WORKER` | Create Purchase Order with inline vendor creation & SKU picker (FE03) |

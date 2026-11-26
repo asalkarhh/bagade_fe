@@ -188,4 +188,61 @@ describe('createApiClient', () => {
     expect(onUnauthorized).toHaveBeenCalledTimes(1);
     expect(client.hasCsrfToken()).toBe(false);
   });
+
+  it('downloads binary responses via getBlob, extracts filename, and handles HTTP/401 errors', async () => {
+    const onUnauthorized = vi.fn();
+    let mode: 'pdf' | '404' | '401' = 'pdf';
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === '/api/v1/auth/csrf') {
+        return jsonResponse({ csrfToken: 'csrf-blob' });
+      }
+      if (mode === 'pdf') {
+        return new Response(new Blob(['%PDF-1.4\n'], { type: 'application/pdf' }), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': 'attachment; filename="BILL-2026-0001-rev1.pdf"',
+          },
+        });
+      }
+      if (mode === '404') {
+        return jsonResponse(
+          {
+            code: 'RESOURCE_NOT_FOUND',
+            message: 'Bill revision not found',
+            requestId: 'req-blob-404',
+          },
+          404,
+        );
+      }
+      return jsonResponse({ code: 'AUTH_REQUIRED', message: 'Expired' }, 401);
+    });
+
+    const client = createApiClient({ fetchImpl: fetchMock as unknown as typeof fetch });
+    client.setUnauthorizedHandler(onUnauthorized);
+    await client.ensureCsrfToken();
+
+    const download = await client.getBlob('/bills/bill-1/print', {
+      query: { format: 'pdf', revision: 1 },
+    });
+    expect(download.filename).toBe('BILL-2026-0001-rev1.pdf');
+    expect(download.blob.size).toBeGreaterThan(0);
+
+    mode = '404';
+    await expect(client.getBlob('/bills/missing/print')).rejects.toMatchObject({
+      kind: 'not_found',
+      code: 'RESOURCE_NOT_FOUND',
+      requestId: 'req-blob-404',
+    });
+
+    mode = '401';
+    await expect(client.getBlob('/bills/bill-1/print')).rejects.toMatchObject({
+      kind: 'unauthorized',
+      code: 'AUTH_REQUIRED',
+    });
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+    expect(client.hasCsrfToken()).toBe(false);
+  });
 });

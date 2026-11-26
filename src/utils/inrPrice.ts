@@ -51,3 +51,24 @@ export function formatInrDisplay(decimalPrice: string): string {
   const formattedDec = rawDec.padEnd(2, '0');
   return `₹${formattedInt}.${formattedDec}`;
 }
+
+export function parseInrToPaise(raw: string): number | null {
+  const trimmed = raw.trim();
+  if (!INR_INPUT_PATTERN.test(trimmed)) {
+    return null;
+  }
+  const [rawInt, rawDec = ''] = trimmed.split('.');
+  const strippedInt = rawInt.replace(/^0+(?=\d)/, '');
+  const paddedDec = rawDec.padEnd(2, '0');
+  const paise = Number(strippedInt) * 100 + Number(paddedDec);
+  return Number.isSafeInteger(paise) ? paise : null;
+}
+
+export function formatPaiseToInr(paise: number): string {
+  const rounded = Math.trunc(paise);
+  const sign = rounded < 0 ? '-' : '';
+  const abs = Math.abs(rounded);
+  const rupees = Math.floor(abs / 100);
+  const remainder = String(abs % 100).padStart(2, '0');
+  return `${sign}${rupees}.${remainder}`;
+}

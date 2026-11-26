@@ -263,4 +263,30 @@
     border: 0 !important;
     white-space: nowrap !important;
   }
+
+  .print-output-portal {
+    display: none;
+  }
+}
+
+@media print {
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  body > :not(.print-output-portal) {
+    display: none !important;
+  }
+
+  .print-output-portal {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
 }

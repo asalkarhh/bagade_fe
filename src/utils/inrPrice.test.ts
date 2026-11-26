@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { formatInrDisplay, normalizeInrPriceInput } from './inrPrice.ts';
+import {
+  formatInrDisplay,
+  formatPaiseToInr,
+  normalizeInrPriceInput,
+  parseInrToPaise,
+} from './inrPrice.ts';
 
 describe('inrPrice utilities', () => {
   it('normalizes valid INR decimal inputs while preserving exact decimal accuracy', () => {
@@ -26,5 +31,19 @@ describe('inrPrice utilities', () => {
     expect(formatInrDisplay('125000.50')).toBe('₹1,25,000.50');
     expect(formatInrDisplay('199.5')).toBe('₹199.50');
     expect(formatInrDisplay('9999999999.99')).toBe('₹9,99,99,99,999.99');
+  });
+
+  it('converts INR strings to exact integer paise and formats back cleanly', () => {
+    expect(parseInrToPaise('0')).toBe(0);
+    expect(parseInrToPaise('199.5')).toBe(19950);
+    expect(parseInrToPaise('4500.00')).toBe(450000);
+    expect(parseInrToPaise('0.01')).toBe(1);
+    expect(parseInrToPaise('invalid')).toBeNull();
+    expect(parseInrToPaise('-10.00')).toBeNull();
+
+    expect(formatPaiseToInr(0)).toBe('0.00');
+    expect(formatPaiseToInr(19950)).toBe('199.50');
+    expect(formatPaiseToInr(450005)).toBe('4500.05');
+    expect(formatPaiseToInr(-250)).toBe('-2.50');
   });
 });

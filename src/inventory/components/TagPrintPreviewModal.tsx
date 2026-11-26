@@ -328,7 +328,7 @@ function TagPrintPreviewContent({
 
           {typeof document !== 'undefined'
             ? createPortal(
-                <div className="tag-print-portal" aria-hidden="true">
+                <div className="tag-print-portal print-output-portal" aria-hidden="true">
                   <style media="print">
                     {`@page { size: ${profile.widthMm}mm ${profile.heightMm}mm; margin: 0; }`}
                   </style>

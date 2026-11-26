@@ -79,9 +79,18 @@ function isRawBody(body: unknown): body is BodyInit {
   );
 }
 
+export interface BlobDownloadResponse {
+  blob: Blob;
+  filename: string | null;
+}
+
 export interface ApiClient {
   request<T>(path: string, options?: ApiRequestOptions): Promise<T>;
   get<T>(path: string, options?: Omit<ApiRequestOptions, 'method' | 'body'>): Promise<T>;
+  getBlob(
+    path: string,
+    options?: Omit<ApiRequestOptions, 'method' | 'body'>,
+  ): Promise<BlobDownloadResponse>;
   post<T>(
     path: string,
     body?: unknown,
@@ -288,10 +297,61 @@ export function createApiClient(config: CreateApiClientOptions = {}): ApiClient 
     }
   }
 
+  function extractFilename(contentDisposition: string | null): string | null {
+    if (!contentDisposition) {
+      return null;
+    }
+    const quotedMatch = /filename="([^"]+)"/i.exec(contentDisposition);
+    if (quotedMatch?.[1]) {
+      return quotedMatch[1];
+    }
+    const plainMatch = /filename=([^;\s]+)/i.exec(contentDisposition);
+    return plainMatch?.[1] ?? null;
+  }
+
+  async function getBlob(
+    path: string,
+    options: Omit<ApiRequestOptions, 'method' | 'body'> = {},
+  ): Promise<BlobDownloadResponse> {
+    const headers = new Headers(options.headers);
+    const handleUnauthorized = options.handleUnauthorized ?? true;
+    if (!headers.has('Accept')) {
+      headers.set('Accept', 'application/pdf, application/octet-stream');
+    }
+
+    const response = await executeFetch(buildUrl(baseUrl, path, options.query), {
+      method: 'GET',
+      credentials: 'same-origin',
+      headers,
+      signal: options.signal,
+    });
+
+    if (!response.ok) {
+      const rawText = await response.text();
+      const headerRequestId = response.headers.get('X-Request-Id');
+      const payload = parseApiErrorPayload(rawText);
+      const apiError = normalizeHttpError(response.status, payload, headerRequestId);
+
+      if (apiError.kind === 'csrf') {
+        clearCsrfToken();
+      }
+      if (response.status === 401 && handleUnauthorized) {
+        clearCsrfToken();
+        unauthorizedHandler?.(apiError);
+      }
+      throw apiError;
+    }
+
+    const blob = await response.blob();
+    const filename = extractFilename(response.headers.get('Content-Disposition'));
+    return { blob, filename };
+  }
+
   return {
     request,
     get: <T>(path: string, options?: Omit<ApiRequestOptions, 'method' | 'body'>) =>
       request<T>(path, { ...options, method: 'GET' }),
+    getBlob,
     post: <T>(
       path: string,
       body?: unknown,

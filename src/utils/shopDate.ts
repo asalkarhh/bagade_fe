@@ -74,3 +74,26 @@ export function isValidIsoDate(value: string): boolean {
     check.getUTCDate() === day
   );
 }
+
+export function formatShopTimestamp(
+  isoInstant: string,
+  timeZone: string = getShopTimeZone(),
+): string {
+  const date = new Date(isoInstant);
+  if (Number.isNaN(date.getTime())) {
+    return isoInstant;
+  }
+  try {
+    return new Intl.DateTimeFormat('en-IN', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    }).format(date);
+  } catch {
+    return date.toISOString().slice(0, 16).replace('T', ' ');
+  }
+}

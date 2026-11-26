@@ -1,0 +1,357 @@
+@layer components {
+  .billing-counter-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: start;
+  }
+
+  @media (min-width: 62rem) {
+    .billing-counter-layout {
+      grid-template-columns: minmax(0, 1.55fr) minmax(20.5rem, 1fr);
+    }
+  }
+
+  .billing-main-column,
+  .billing-checkout-column {
+    display: grid;
+    gap: 1.25rem;
+    min-inline-size: 0;
+  }
+
+  @media (min-width: 62rem) {
+    .billing-checkout-column {
+      position: sticky;
+      inset-block-start: 1rem;
+    }
+  }
+
+  .billing-scan-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.625rem;
+    align-items: center;
+  }
+
+  .billing-cart-list {
+    display: grid;
+    gap: 0.875rem;
+  }
+
+  .billing-cart-item {
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 0.875rem 1rem;
+    background-color: var(--bg-surface);
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .billing-cart-item--issue {
+    border-color: var(--danger-border);
+    background-color: var(--danger-bg);
+  }
+
+  .billing-cart-item__top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+  }
+
+  .billing-cart-item__title {
+    display: grid;
+    gap: 0.2rem;
+    min-inline-size: 0;
+  }
+
+  .billing-cart-item__name {
+    font-weight: 700;
+    font-size: 1rem;
+  }
+
+  .billing-cart-item__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.875rem;
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+  }
+
+  .billing-cart-item__total {
+    font-weight: 700;
+    font-size: 1.0625rem;
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  .billing-cart-item__controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+    gap: 0.75rem;
+    align-items: end;
+  }
+
+  .billing-qty-stepper {
+    display: inline-flex;
+    align-items: stretch;
+    gap: 0.25rem;
+  }
+
+  .billing-qty-stepper .catalog-input {
+    inline-size: 4.5rem;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .billing-totals-box {
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background-color: var(--bg-subtle);
+    padding: 0.875rem 1rem;
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .billing-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.75rem;
+    font-size: 0.9375rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .billing-total-row--grand {
+    padding-block-start: 0.5rem;
+    border-block-start: 1px solid var(--border-subtle);
+    font-size: 1.25rem;
+    font-weight: 800;
+  }
+
+  .billing-payment-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .billing-payment-row {
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem;
+    background-color: var(--bg-subtle);
+    display: grid;
+    gap: 0.625rem;
+  }
+
+  .billing-payment-row__fields {
+    display: grid;
+    grid-template-columns: minmax(6.5rem, 0.8fr) minmax(7rem, 1fr);
+    gap: 0.5rem 0.625rem;
+    align-items: end;
+  }
+
+  .billing-customer-box {
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem;
+    background-color: var(--bg-subtle);
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .bill-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.2rem 0.625rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+  }
+
+  .bill-status-pill--issued {
+    background-color: var(--success-bg);
+    color: var(--success-text);
+    border-color: var(--success-border);
+  }
+
+  .bill-status-pill--partial {
+    background-color: var(--warning-bg);
+    color: var(--warning-text);
+    border-color: var(--warning-border);
+  }
+
+  .bill-status-pill--returned {
+    background-color: var(--accent-soft);
+    color: var(--accent-soft-text);
+    border-color: var(--accent);
+  }
+
+  .bill-status-pill--cancelled {
+    background-color: var(--danger-bg);
+    color: var(--danger-text);
+    border-color: var(--danger-border);
+  }
+
+  .billing-counter-panel {
+    display: grid;
+    gap: 0.875rem;
+  }
+
+  .billing-not-found-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 0.75rem;
+    padding: 0.75rem 0.875rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--warning-border);
+    background-color: var(--warning-bg);
+    color: var(--warning-text);
+  }
+
+  .billing-cart-item__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 0.75rem;
+  }
+
+  .billing-cart-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: 1px solid var(--border-subtle);
+    background-color: var(--bg-subtle);
+    color: var(--text-primary);
+  }
+
+  .billing-line-warning {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--danger-text);
+  }
+
+  .billing-completed-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.625rem;
+    margin-block-start: 0.25rem;
+  }
+
+  .billing-revision-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.75rem 1rem;
+  }
+
+  .alert-banner--success {
+    background-color: var(--success-bg);
+    border-color: var(--success-border);
+    color: var(--success-text);
+  }
+
+  /* 80 mm Thermal Receipt Print View */
+  .receipt-80mm-stage {
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    border: 1px dashed var(--border-control);
+    background-color: var(--bg-subtle);
+    display: flex;
+    justify-content: center;
+    overflow-x: auto;
+  }
+
+  .receipt-80mm {
+    box-sizing: border-box;
+    inline-size: 80mm;
+    max-inline-size: 100%;
+    padding: 3.5mm;
+    background-color: #ffffff;
+    color: #111827;
+    border: 1px solid #cbd5e1;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.35;
+    display: grid;
+    gap: 0.375rem;
+  }
+
+  .receipt-80mm__header {
+    text-align: center;
+    display: grid;
+    gap: 0.125rem;
+  }
+
+  .receipt-80mm__shop {
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .receipt-80mm__divider {
+    border: 0;
+    border-block-start: 1px dashed #64748b;
+    margin: 0.2rem 0;
+  }
+
+  .receipt-80mm__pair {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .receipt-80mm__pair--total {
+    font-size: 12.5px;
+    font-weight: 800;
+  }
+
+  .receipt-80mm__items {
+    list-style: none;
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .receipt-80mm__item-name {
+    font-weight: 700;
+  }
+
+  .receipt-80mm__footer {
+    text-align: center;
+    font-size: 10.5px;
+    margin-block-start: 0.25rem;
+  }
+}
+
+@media print {
+  .bill-print-portal .receipt-80mm {
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    inline-size: 80mm;
+    max-inline-size: none;
+    padding: 2mm;
+    color: #000000 !important;
+  }
+}

@@ -7,6 +7,10 @@ import { APP_MODULES, DEFAULT_AUTHENTICATED_HOME } from './navigation/navItems.t
 import { LoginPage } from './pages/LoginPage.tsx';
 import { ModulePlaceholderPage } from './pages/ModulePlaceholderPage.tsx';
 import { NotFoundPage } from './pages/NotFoundPage.tsx';
+import { BillDetailPage } from './billing/BillDetailPage.tsx';
+import { BillHistoryPage } from './billing/BillHistoryPage.tsx';
+import { BillingCounterPage } from './billing/BillingCounterPage.tsx';
+import { BillingLayout } from './billing/BillingLayout.tsx';
 import { CreatePurchaseOrderPage } from './purchasing/CreatePurchaseOrderPage.tsx';
 import { PurchaseOrderDetailPage } from './purchasing/PurchaseOrderDetailPage.tsx';
 import { PurchaseOrdersPage } from './purchasing/PurchaseOrdersPage.tsx';
@@ -20,6 +24,7 @@ export function AppRoutes() {
   const placeholderModules = APP_MODULES.filter(
     (module) =>
       module.roles.includes('WORKER') &&
+      module.id !== 'billing' &&
       module.id !== 'products' &&
       module.id !== 'purchases' &&
       module.id !== 'inventory',
@@ -37,6 +42,12 @@ export function AppRoutes() {
       <Route element={<RequireAuth />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<Navigate to={DEFAULT_AUTHENTICATED_HOME} replace />} />
+
+          <Route path="/billing" element={<BillingLayout />}>
+            <Route index element={<BillingCounterPage />} />
+            <Route path="history" element={<BillHistoryPage />} />
+            <Route path=":billId" element={<BillDetailPage />} />
+          </Route>
 
           <Route path="/products" element={<ProductsPage />} />
 
