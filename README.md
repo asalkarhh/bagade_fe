@@ -78,12 +78,19 @@ The app will be available at `http://localhost:5173`. Vite proxies `/api` reques
 | `/purchases/:poId` | `OWNER`, `WORKER` | Purchase Order detail view, Receive Stock action & Cancel Remaining Quantity workflow (FE03/FE04) |
 | `/purchases/receive` | `OWNER`, `WORKER` | Direct Stock Receipt without a PO with barcode scan & SKU linking (FE04) |
 | `/purchases/:poId/receive` | `OWNER`, `WORKER` | Receive Stock against an open Purchase Order (FE04) |
-| `/inventory` | `OWNER`, `WORKER` | Working inventory stock balances, category/SKU filtering, expandable batches & tag reprinting (FE04) |
+| `/inventory` | `OWNER`, `WORKER` | Working inventory stock balances, category/SKU filtering, expandable batches & tag reprinting (FE04/FE07) |
 | `/inventory/receipts/:receiptId` | `OWNER`, `WORKER` | Posted Stock Receipt view with batch tag generation and Code 128 print preview (FE04) |
+| `/inventory/stock-counts` | `OWNER`, `WORKER` | Start a whole-shop or category physical stock count and reopen saved draft links/IDs (FE07) |
+| `/inventory/stock-counts/:countId` | `OWNER`, `WORKER` | Physical stock count workspace with barcode/camera scanning, line saves, recount conflict handling & posting (FE07) |
 | `/customers` | `OWNER`, `WORKER` | Customer search, inline customer creation & direct link to view customer bills (FE06) |
-| `/expenses` | `OWNER`, `WORKER` | Placeholder (pending) |
+| `/expenses` | `OWNER`, `WORKER` | Operating expenses list, date/category filters, expense creation & optimistic-locked edits (FE07) |
 | `/reports` | `OWNER` only | Placeholder (pending; shows Access Denied for `WORKER`) |
 | `/what-to-buy` | `OWNER` only | Placeholder (pending; shows Access Denied for `WORKER`) |
+
+## Backend API Dependencies Noted in FE07
+
+- **Stock Count Draft List**: The backend (`StockCountController`) provides `POST /api/v1/stock-counts`, `GET /api/v1/stock-counts/{id}`, `PUT /api/v1/stock-counts/{id}/lines/{skuId}`, and `POST /api/v1/stock-counts/{id}/post`, without a `GET /api/v1/stock-counts` list endpoint. The frontend keeps draft links (`/inventory/stock-counts/:countId`) refresh-safe, remembers started/opened counts in session memory, and allows opening any count by ID; a server-wide draft list across reloads depends on adding a backend list endpoint.
+- **Operating Expense Create Idempotency**: `POST /api/v1/expenses` does not accept an `Idempotency-Key` header. If creating an expense fails with an unknown network/server outcome, the modal preserves user inputs and instructs staff to inspect the Expenses list before resubmitting so duplicates are avoided.
 
 ## Backend API Dependencies Noted in FE02
 

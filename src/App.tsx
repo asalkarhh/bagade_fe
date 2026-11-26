@@ -19,7 +19,10 @@ import { PurchasesLayout } from './purchasing/PurchasesLayout.tsx';
 import { VendorsPage } from './purchasing/VendorsPage.tsx';
 import { InventoryPage } from './inventory/InventoryPage.tsx';
 import { ReceiveStockPage } from './inventory/ReceiveStockPage.tsx';
+import { StockCountDetailPage } from './inventory/StockCountDetailPage.tsx';
+import { StockCountsLandingPage } from './inventory/StockCountsLandingPage.tsx';
 import { StockReceiptDetailPage } from './inventory/StockReceiptDetailPage.tsx';
+import { ExpensesPage } from './expenses/ExpensesPage.tsx';
 
 export function AppRoutes() {
   const placeholderModules = APP_MODULES.filter(
@@ -29,7 +32,8 @@ export function AppRoutes() {
       module.id !== 'customers' &&
       module.id !== 'products' &&
       module.id !== 'purchases' &&
-      module.id !== 'inventory',
+      module.id !== 'inventory' &&
+      module.id !== 'expenses',
   );
   const ownerOnlyModules = APP_MODULES.filter(
     (module) => module.roles.length === 1 && module.roles[0] === 'OWNER',
@@ -64,8 +68,11 @@ export function AppRoutes() {
 
           <Route path="/inventory" element={<InventoryPage />} />
           <Route path="/inventory/receipts/:receiptId" element={<StockReceiptDetailPage />} />
+          <Route path="/inventory/stock-counts" element={<StockCountsLandingPage />} />
+          <Route path="/inventory/stock-counts/:countId" element={<StockCountDetailPage />} />
 
           <Route path="/customers" element={<CustomersPage />} />
+          <Route path="/expenses" element={<ExpensesPage />} />
 
           {placeholderModules.map((module) => (
             <Route

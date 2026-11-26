@@ -8,6 +8,7 @@ import { formatInrDisplay } from '../utils/inrPrice.ts';
 import { TagPrintPreviewModal, type TagPrintMode } from './components/TagPrintPreviewModal.tsx';
 import { inventoryApi, type InventoryApi } from './inventoryApi.ts';
 import { useRecentSessionReceipts } from './sessionReceipts.ts';
+import { useRecentSessionStockCounts } from './sessionStockCounts.ts';
 import type { InventoryItem } from './types.ts';
 import '../catalog/ProductsPage.css';
 import './Inventory.css';
@@ -51,6 +52,7 @@ export function InventoryPage({ api = inventoryApi, catalog = catalogApi }: Inve
   } | null>(null);
 
   const recentSessionReceipts = useRecentSessionReceipts();
+  const recentStockCounts = useRecentSessionStockCounts();
   const requestSeqRef = useRef(0);
 
   useEffect(() => {
@@ -214,11 +216,34 @@ export function InventoryPage({ api = inventoryApi, catalog = catalogApi }: Inve
         </div>
 
         <div className="products-header__actions">
+          <Link to="/inventory/stock-counts" className="btn-secondary">
+            Start Stock Count
+          </Link>
           <Link to="/purchases/receive" className="btn-primary">
             Direct Receipt
           </Link>
         </div>
       </div>
+
+      {recentStockCounts.length > 0 ? (
+        <section className="surface-card" aria-label="Recent physical stock counts">
+          <div className="catalog-added-list">
+            <span className="catalog-added-list__title">Recent physical stock counts</span>
+            <ul>
+              {recentStockCounts.map((count) => (
+                <li key={count.countId}>
+                  <Link to={`/inventory/stock-counts/${count.countId}`} className="po-link">
+                    {count.scope === 'SHOP'
+                      ? 'Whole Shop'
+                      : count.categoryLabel || 'Category Count'}
+                  </Link>{' '}
+                  — <strong>{count.status}</strong> ({count.countedSkus}/{count.totalSkus} SKUs counted)
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      ) : null}
 
       {recentSessionReceipts.length > 0 ? (
         <section className="surface-card" aria-label="Recently posted receipts">

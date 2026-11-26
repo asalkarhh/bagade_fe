@@ -127,3 +127,101 @@ export interface InventorySearchParams {
   page: number;
   size: number;
 }
+
+export type StockCountScope = 'SHOP' | 'CATEGORY';
+
+export type StockCountStatus = 'DRAFT' | 'POSTED';
+
+export type StockCountAllocationBasis = 'FIFO_SHORTAGE' | 'AUDIT_SURPLUS';
+
+export interface CreateStockCountInput {
+  scope: StockCountScope;
+  categoryId?: string | null;
+}
+
+export interface StockCountSkuRef {
+  skuId: string;
+  skuCode: string;
+  productName: string;
+  size: string | null;
+}
+
+export interface CreateStockCountResponse {
+  countId: string;
+  scope: StockCountScope;
+  categoryId: string | null;
+  status: StockCountStatus;
+  version: number;
+  scopedSkus: StockCountSkuRef[];
+}
+
+export interface StockCountLineDetail {
+  skuId: string;
+  skuCode: string;
+  productName: string;
+  size: string | null;
+  countedQuantity: number | null;
+  expectedQuantity: number | null;
+  currentQuantity: number;
+  observedStockVersion: number | null;
+  currentStockVersion: number;
+  reason: string | null;
+}
+
+export interface StockCountDetail {
+  countId: string;
+  scope: StockCountScope;
+  categoryId: string | null;
+  status: StockCountStatus;
+  version: number;
+  createdAt: string;
+  postedAt: string | null;
+  postedBy: string | null;
+  lines: StockCountLineDetail[];
+}
+
+export interface SaveStockCountLineInput {
+  expectedVersion: number;
+  countedQuantity: number | null;
+  observedStockVersion: number;
+  reason?: string | null;
+}
+
+export interface SaveStockCountLineResponse {
+  countId: string;
+  countVersion: number;
+  line: StockCountLineDetail;
+}
+
+export interface PostStockCountInput {
+  expectedVersion: number;
+}
+
+export interface StockCountAdjustmentSummary {
+  skuId: string;
+  skuCode: string;
+  productName: string;
+  size: string | null;
+  expectedQuantity: number;
+  countedQuantity: number;
+  quantityDelta: number;
+  reason: string | null;
+  allocationBasis: StockCountAllocationBasis | null;
+  batchIds: string[];
+}
+
+export interface PostStockCountResponse {
+  countId: string;
+  status: StockCountStatus;
+  version: number;
+  postedAt: string;
+  adjustments: StockCountAdjustmentSummary[];
+}
+
+export interface ChangedStockSkuDetail {
+  skuId: string;
+  skuCode: string;
+  observedStockVersion: number | null;
+  currentStockVersion: number;
+  currentSellableQuantity: number;
+}

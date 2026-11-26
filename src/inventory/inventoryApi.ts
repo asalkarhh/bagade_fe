@@ -4,10 +4,17 @@ import type {
   BarcodeLookupResult,
   BarcodeMappingResult,
   BatchLabel,
+  CreateStockCountInput,
+  CreateStockCountResponse,
   CreateStockReceiptInput,
   InventoryItem,
   InventorySearchParams,
+  PostStockCountInput,
+  PostStockCountResponse,
   RegisterBarcodeInput,
+  SaveStockCountLineInput,
+  SaveStockCountLineResponse,
+  StockCountDetail,
   StockReceiptDetail,
 } from './types.ts';
 
@@ -33,6 +40,18 @@ export interface InventoryApi {
     params: InventorySearchParams,
     signal?: AbortSignal,
   ): Promise<PagedResponse<InventoryItem>>;
+  createStockCount(input: CreateStockCountInput): Promise<CreateStockCountResponse>;
+  getStockCount(countId: string, signal?: AbortSignal): Promise<StockCountDetail>;
+  saveStockCountLine(
+    countId: string,
+    skuId: string,
+    input: SaveStockCountLineInput,
+  ): Promise<SaveStockCountLineResponse>;
+  postStockCount(
+    countId: string,
+    input: PostStockCountInput,
+    idempotencyKey: string,
+  ): Promise<PostStockCountResponse>;
 }
 
 export function createInventoryApi(client: ApiClient = apiClient): InventoryApi {
@@ -129,6 +148,55 @@ export function createInventoryApi(client: ApiClient = apiClient): InventoryApi 
         },
         signal,
       });
+    },
+
+    async createStockCount(input: CreateStockCountInput): Promise<CreateStockCountResponse> {
+      const body: Record<string, unknown> = {
+        scope: input.scope,
+      };
+      if (input.scope === 'CATEGORY' && input.categoryId) {
+        body.categoryId = input.categoryId;
+      }
+      return client.post<CreateStockCountResponse>('/stock-counts', body);
+    },
+
+    async getStockCount(countId: string, signal?: AbortSignal): Promise<StockCountDetail> {
+      return client.get<StockCountDetail>(`/stock-counts/${encodeURIComponent(countId)}`, {
+        signal,
+      });
+    },
+
+    async saveStockCountLine(
+      countId: string,
+      skuId: string,
+      input: SaveStockCountLineInput,
+    ): Promise<SaveStockCountLineResponse> {
+      const body: Record<string, unknown> = {
+        expectedVersion: input.expectedVersion,
+        countedQuantity: input.countedQuantity,
+        observedStockVersion: input.observedStockVersion,
+        reason: normalizeOptionalString(input.reason),
+      };
+      return client.put<SaveStockCountLineResponse>(
+        `/stock-counts/${encodeURIComponent(countId)}/lines/${encodeURIComponent(skuId)}`,
+        body,
+      );
+    },
+
+    async postStockCount(
+      countId: string,
+      input: PostStockCountInput,
+      idempotencyKey: string,
+    ): Promise<PostStockCountResponse> {
+      return client.post<PostStockCountResponse>(
+        `/stock-counts/${encodeURIComponent(countId)}/post`,
+        { expectedVersion: input.expectedVersion },
+        {
+          headers: {
+            'Idempotency-Key': idempotencyKey,
+          },
+        },
+      );
     },
   };
 }

@@ -203,4 +203,116 @@ describe('inventoryApi', () => {
       '/api/v1/inventory?skuId=sku-1&categoryId=cat-1&q=saree&page=0&size=25',
     );
   });
+
+  it('calls stock count endpoints cleanly preserving 0 counts and Idempotency-Key on post', async () => {
+    let shopBody: Record<string, unknown> | null = null;
+    let catBody: Record<string, unknown> | null = null;
+    let lineZeroBody: Record<string, unknown> | null = null;
+    let postHeaders: Headers | null = null;
+    let postBody: Record<string, unknown> | null = null;
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === '/api/v1/auth/csrf') {
+        return jsonResponse({ csrfToken: 'csrf-sc' });
+      }
+      if (url === '/api/v1/stock-counts' && init?.method === 'POST') {
+        const parsed = JSON.parse(String(init.body)) as Record<string, unknown>;
+        if (parsed.scope === 'SHOP') {
+          shopBody = parsed;
+        } else {
+          catBody = parsed;
+        }
+        return jsonResponse(
+          {
+            countId: 'sc-1',
+            scope: parsed.scope,
+            categoryId: parsed.categoryId ?? null,
+            status: 'DRAFT',
+            version: 0,
+            scopedSkus: [],
+          },
+          201,
+        );
+      }
+      if (url === '/api/v1/stock-counts/sc-1' && (!init?.method || init.method === 'GET')) {
+        return jsonResponse({
+          countId: 'sc-1',
+          scope: 'SHOP',
+          categoryId: null,
+          status: 'DRAFT',
+          version: 0,
+          createdAt: '2026-11-26T05:00:00Z',
+          postedAt: null,
+          postedBy: null,
+          lines: [],
+        });
+      }
+      if (url === '/api/v1/stock-counts/sc-1/lines/sku-1' && init?.method === 'PUT') {
+        lineZeroBody = JSON.parse(String(init.body)) as Record<string, unknown>;
+        return jsonResponse({
+          countId: 'sc-1',
+          countVersion: 1,
+          line: {
+            skuId: 'sku-1',
+            skuCode: 'S-1',
+            productName: 'Kurti',
+            size: 'M',
+            countedQuantity: 0,
+            expectedQuantity: 2,
+            currentQuantity: 2,
+            observedStockVersion: 1,
+            currentStockVersion: 1,
+            reason: 'Damaged',
+          },
+        });
+      }
+      if (url === '/api/v1/stock-counts/sc-1/post' && init?.method === 'POST') {
+        postHeaders = new Headers(init.headers);
+        postBody = JSON.parse(String(init.body)) as Record<string, unknown>;
+        return jsonResponse({
+          countId: 'sc-1',
+          status: 'POSTED',
+          version: 2,
+          postedAt: '2026-11-26T05:05:00Z',
+          adjustments: [],
+        });
+      }
+      throw new Error(`Unexpected request: ${init?.method ?? 'GET'} ${url}`);
+    });
+
+    const api = createInventoryApi(
+      createApiClient({ fetchImpl: fetchMock as unknown as typeof fetch }),
+    );
+
+    await api.createStockCount({ scope: 'SHOP' });
+    expect(shopBody).toEqual({ scope: 'SHOP' });
+    expect('categoryId' in shopBody!).toBe(false);
+
+    await api.createStockCount({ scope: 'CATEGORY', categoryId: 'cat-1' });
+    expect(catBody).toEqual({ scope: 'CATEGORY', categoryId: 'cat-1' });
+
+    const fetched = await api.getStockCount('sc-1');
+    expect(fetched.countId).toBe('sc-1');
+
+    const saved = await api.saveStockCountLine('sc-1', 'sku-1', {
+      expectedVersion: 0,
+      countedQuantity: 0,
+      observedStockVersion: 1,
+      reason: ' Damaged ',
+    });
+    expect(saved.countVersion).toBe(1);
+    expect(lineZeroBody).toEqual({
+      expectedVersion: 0,
+      countedQuantity: 0,
+      observedStockVersion: 1,
+      reason: 'Damaged',
+    });
+
+    const posted = await api.postStockCount('sc-1', { expectedVersion: 1 }, 'idem-sc-post-1');
+    expect(posted.status).toBe('POSTED');
+    expect(postHeaders!.get('Idempotency-Key')).toBe('idem-sc-post-1');
+    expect(postHeaders!.get('X-CSRF-Token')).toBe('csrf-sc');
+    expect(postBody).toEqual({ expectedVersion: 1 });
+  });
 });

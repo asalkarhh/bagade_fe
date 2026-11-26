@@ -46,6 +46,10 @@ function makeMockInventoryApi(overrides: Partial<InventoryApi> = {}): InventoryA
     generateBatchLabel: vi.fn(),
     getBatchLabel: vi.fn(),
     listInventory: vi.fn(async () => ({ items: [], page: 0, size: 25, total: 0 })),
+    createStockCount: vi.fn(),
+    getStockCount: vi.fn(),
+    saveStockCountLine: vi.fn(),
+    postStockCount: vi.fn(),
     ...overrides,
   };
 }

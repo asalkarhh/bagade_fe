@@ -329,6 +329,195 @@
     .receipt-line-tag-toggle {
       min-block-size: 3.125rem;
     }
+
+    .stock-count-qty-input,
+    .stock-count-reason-input {
+      min-block-size: 3.125rem;
+    }
+  }
+
+  /* Physical Stock Counts */
+  .stock-count-scope-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: 0.75rem;
+  }
+
+  .stock-count-scope-card {
+    position: relative;
+    display: grid;
+    gap: 0.25rem;
+    padding: 0.875rem 1rem;
+    border-radius: var(--radius-md);
+    border: 1.5px solid var(--border-control);
+    background-color: var(--bg-surface);
+    cursor: pointer;
+  }
+
+  .stock-count-scope-card:has(input:checked) {
+    border-color: var(--accent);
+    background-color: var(--accent-soft);
+    color: var(--accent-soft-text);
+  }
+
+  .stock-count-scope-card:has(input:focus-visible) {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  .stock-count-scope-card input {
+    position: absolute;
+    opacity: 0;
+    inline-size: 1px;
+    block-size: 1px;
+  }
+
+  .stock-count-scope-card__title {
+    font-weight: 700;
+  }
+
+  .stock-count-scope-card__desc {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+  }
+
+  .stock-count-scope-card:has(input:checked) .stock-count-scope-card__desc {
+    color: inherit;
+  }
+
+  .stock-count-open-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.75rem 1rem;
+  }
+
+  .stock-count-open-form__field {
+    flex: 1 1 18rem;
+  }
+
+  .stock-count-meta-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+  }
+
+  .stock-count-filter-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .stock-count-filter-pill {
+    min-block-size: 2.5rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-control);
+    background-color: var(--bg-surface);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .stock-count-filter-pill--active {
+    background-color: var(--accent);
+    border-color: var(--accent);
+    color: var(--text-inverse);
+  }
+
+  .stock-count-row--scanned {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+    background-color: var(--accent-soft);
+  }
+
+  .stock-count-row--recount {
+    background-color: var(--warning-bg);
+  }
+
+  .stock-count-qty-input {
+    inline-size: 6.75rem;
+    min-block-size: 2.75rem;
+    padding: 0.45rem 0.625rem;
+    border: 1.5px solid var(--border-control);
+    border-radius: var(--radius-sm);
+    background-color: var(--bg-surface);
+    color: var(--text-primary);
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stock-count-qty-input[aria-invalid='true'],
+  .stock-count-reason-input[aria-invalid='true'] {
+    border-color: var(--danger-border);
+    background-color: var(--danger-bg);
+  }
+
+  .stock-count-reason-input {
+    inline-size: 100%;
+    min-inline-size: 11rem;
+    min-block-size: 2.75rem;
+    padding: 0.45rem 0.625rem;
+    border: 1.5px solid var(--border-control);
+    border-radius: var(--radius-sm);
+    background-color: var(--bg-surface);
+    color: var(--text-primary);
+  }
+
+  .stock-count-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.55rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: 1px solid var(--border-control);
+    white-space: nowrap;
+  }
+
+  .stock-count-badge--pending {
+    background-color: var(--bg-subtle);
+    color: var(--text-secondary);
+  }
+
+  .stock-count-badge--match {
+    background-color: var(--success-bg);
+    color: var(--success-text);
+    border-color: var(--success-border);
+  }
+
+  .stock-count-badge--warning {
+    background-color: var(--warning-bg);
+    color: var(--warning-text);
+    border-color: var(--warning-border);
+  }
+
+  .stock-count-badge--danger {
+    background-color: var(--danger-bg);
+    color: var(--danger-text);
+    border-color: var(--danger-border);
+  }
+
+  .stock-count-mobile-scan-action {
+    display: none;
+  }
+
+  @container (inline-size < 46rem) {
+    /* MANDATORY: Hide column header from layout and screen readers. */
+    .stock-count-table thead {
+      display: none;
+    }
+
+    .stock-count-mobile-scan-action {
+      display: inline-flex;
+    }
+
+    .stock-count-qty-input {
+      inline-size: 7.5rem;
+    }
   }
 }
 
