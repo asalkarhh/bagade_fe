@@ -25,6 +25,15 @@ export interface VendorSearchParams {
   size: number;
 }
 
+export interface PurchaseOrderPrefillState {
+  vendorId?: string | null;
+  vendorRecord?: Vendor | null;
+  lines: Array<{
+    sku: import('../catalog/types.ts').SkuListItem;
+    orderedQuantity: number;
+  }>;
+}
+
 export interface PurchaseOrderListItem {
   poId: string;
   poNumber: string;

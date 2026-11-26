@@ -55,6 +55,11 @@ export function getShopLocalDateIso(timeZone: string = getShopTimeZone()): strin
   return `${year}-${month}-${day}`;
 }
 
+export function getShopMonthStartDateIso(timeZone: string = getShopTimeZone()): string {
+  const todayIso = getShopLocalDateIso(timeZone);
+  return `${todayIso.slice(0, 8)}01`;
+}
+
 export function isValidIsoDate(value: string): boolean {
   const trimmed = value.trim();
   if (!ISO_DATE_PATTERN.test(trimmed)) {

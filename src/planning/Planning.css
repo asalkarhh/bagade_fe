@@ -1,0 +1,229 @@
+@layer components {
+  .planning-shell {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .planning-buying-bar {
+    display: grid;
+    gap: 0.875rem;
+    padding: 1rem 1.25rem;
+    border: 1.5px solid var(--accent);
+    border-radius: var(--radius-lg);
+    background-color: var(--accent-soft);
+  }
+
+  .planning-buying-bar__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+  }
+
+  .planning-buying-items {
+    display: grid;
+    gap: 0.625rem;
+  }
+
+  .planning-buying-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    padding: 0.625rem 0.875rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+    background-color: var(--bg-surface);
+  }
+
+  .planning-buying-row__controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .planning-list-container {
+    container-type: inline-size;
+    display: grid;
+    gap: 0.875rem;
+    padding: 1rem;
+  }
+
+  .planning-item-card {
+    display: grid;
+    gap: 0.75rem;
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+    background-color: var(--bg-surface);
+  }
+
+  .planning-item-card--selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+
+  .planning-item-card__top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+  }
+
+  .planning-item-card__identity {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    min-inline-size: 0;
+    flex: 1 1 16rem;
+  }
+
+  .planning-item-select-checkbox {
+    inline-size: 1.35rem;
+    block-size: 1.35rem;
+    margin-block-start: 0.15rem;
+    accent-color: var(--accent);
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  .planning-item-title-block {
+    display: grid;
+    gap: 0.25rem;
+    min-inline-size: 0;
+  }
+
+  .planning-item-title {
+    font-size: 1.0625rem;
+    font-weight: 700;
+  }
+
+  .planning-item-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.75rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+  }
+
+  /* Stock on hand, open POs, and suggested buy stay together near top on mobile & laptop */
+  .planning-quantities-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(7.75rem, 1fr));
+    gap: 0.5rem;
+  }
+
+  .planning-qty-box {
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+    background-color: var(--bg-subtle);
+    display: grid;
+    gap: 0.125rem;
+  }
+
+  .planning-qty-box--suggested {
+    border-color: var(--accent);
+    background-color: var(--accent-soft);
+  }
+
+  .planning-qty-box--zero {
+    border-color: var(--success-border);
+    background-color: var(--success-bg);
+  }
+
+  .planning-qty-box__label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-secondary);
+  }
+
+  .planning-qty-box__value {
+    font-size: 1rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .planning-item-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.625rem 1rem;
+  }
+
+  .planning-target-cluster {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+  }
+
+  .planning-buy-input {
+    inline-size: 6rem;
+    min-block-size: 2.625rem;
+    padding: 0.35rem 0.6rem;
+    border: 1.5px solid var(--border-control);
+    border-radius: var(--radius-sm);
+    background-color: var(--bg-surface);
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .planning-details {
+    border-block-start: 1px solid var(--border-subtle);
+    padding-block-start: 0.625rem;
+  }
+
+  /* Custom marker aligned next to label text per accordion guide (no headings inside summary) */
+  .planning-details__summary {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5ch;
+    min-block-size: 2.5rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--accent-soft-text);
+    cursor: pointer;
+  }
+
+  .planning-details__summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .planning-details__summary::before {
+    content: '▸';
+    display: inline-block;
+    transition: transform 140ms ease;
+  }
+
+  .planning-details[open] > .planning-details__summary::before {
+    transform: rotate(90deg);
+  }
+
+  .planning-details__body {
+    display: grid;
+    gap: 0.5rem;
+    padding-block-start: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .planning-vendors-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .planning-details__summary::before {
+      transition: none;
+    }
+  }
+}

@@ -100,6 +100,31 @@ function createTestHarness(initialState?: Partial<MockServerState>) {
       return jsonResponse({ items: [], page: 0, size: 25, total: 0 });
     }
 
+    if (url.startsWith('/api/v1/reports/sales')) {
+      return jsonResponse({
+        from: '2026-11-01',
+        to: '2026-11-26',
+        categoryId: null,
+        skuId: null,
+        minPrice: null,
+        maxPrice: null,
+        netUnitsSold: 0,
+        netSales: '0.00',
+        cogs: '0.00',
+        grossProfit: '0.00',
+        costComplete: true,
+        nonSellableReturnUnits: 0,
+        nonSellableReturnCost: '0.00',
+        nonSellableReturnSalesValue: '0.00',
+        operatingExpenses: '0.00',
+        estimatedProfit: '0.00',
+        items: [],
+        page: 0,
+        size: 25,
+        total: 0,
+      });
+    }
+
     throw new Error(`Unhandled request: ${method} ${url}`);
   });
 

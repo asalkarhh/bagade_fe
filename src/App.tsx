@@ -23,6 +23,13 @@ import { StockCountDetailPage } from './inventory/StockCountDetailPage.tsx';
 import { StockCountsLandingPage } from './inventory/StockCountsLandingPage.tsx';
 import { StockReceiptDetailPage } from './inventory/StockReceiptDetailPage.tsx';
 import { ExpensesPage } from './expenses/ExpensesPage.tsx';
+import { ReportsLayout } from './reports/ReportsLayout.tsx';
+import { SalesReportPage } from './reports/SalesReportPage.tsx';
+import { VendorReportPage } from './reports/VendorReportPage.tsx';
+import { StockAgeingReportPage } from './reports/StockAgeingReportPage.tsx';
+import { CollectionsReportPage } from './reports/CollectionsReportPage.tsx';
+import { StockAuditReportPage } from './reports/StockAuditReportPage.tsx';
+import { PurchasePlanningPage } from './planning/PurchasePlanningPage.tsx';
 
 export function AppRoutes() {
   const placeholderModules = APP_MODULES.filter(
@@ -36,7 +43,11 @@ export function AppRoutes() {
       module.id !== 'expenses',
   );
   const ownerOnlyModules = APP_MODULES.filter(
-    (module) => module.roles.length === 1 && module.roles[0] === 'OWNER',
+    (module) =>
+      module.roles.length === 1 &&
+      module.roles[0] === 'OWNER' &&
+      module.id !== 'reports' &&
+      module.id !== 'what-to-buy',
   );
 
   return (
@@ -73,6 +84,20 @@ export function AppRoutes() {
 
           <Route path="/customers" element={<CustomersPage />} />
           <Route path="/expenses" element={<ExpensesPage />} />
+
+          <Route element={<RequireRole allowedRoles={['OWNER']} moduleName="Reports" />}>
+            <Route path="/reports" element={<ReportsLayout />}>
+              <Route index element={<SalesReportPage />} />
+              <Route path="vendors" element={<VendorReportPage />} />
+              <Route path="stock-ageing" element={<StockAgeingReportPage />} />
+              <Route path="collections" element={<CollectionsReportPage />} />
+              <Route path="stock-audits" element={<StockAuditReportPage />} />
+            </Route>
+          </Route>
+
+          <Route element={<RequireRole allowedRoles={['OWNER']} moduleName="What to Buy" />}>
+            <Route path="/what-to-buy" element={<PurchasePlanningPage />} />
+          </Route>
 
           {placeholderModules.map((module) => (
             <Route

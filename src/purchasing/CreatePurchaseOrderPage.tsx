@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { isAbortError, isApiClientError } from '../api/errors.ts';
 import { catalogApi, type CatalogApi } from '../catalog/catalogApi.ts';
 import type { SkuListItem } from '../catalog/types.ts';
@@ -9,7 +9,11 @@ import { SkuPickerModal } from './components/SkuPickerModal.tsx';
 import { VendorFormModal } from './components/VendorFormModal.tsx';
 import { purchasingApi, type PurchasingApi } from './purchasingApi.ts';
 import { getPoStatusDisplay } from './statusLabels.ts';
-import type { PurchaseOrderListItem, Vendor } from './types.ts';
+import type {
+  PurchaseOrderListItem,
+  PurchaseOrderPrefillState,
+  Vendor,
+} from './types.ts';
 
 export interface CreatePurchaseOrderPageProps {
   api?: PurchasingApi;
@@ -48,6 +52,17 @@ export function CreatePurchaseOrderPage({
   catalog = catalogApi,
 }: CreatePurchaseOrderPageProps) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const initialPrefill = useMemo(() => {
+    const rawState = location.state as {
+      prefillPurchaseOrder?: PurchaseOrderPrefillState;
+    } | null;
+    const candidate = rawState?.prefillPurchaseOrder;
+    if (!candidate || !Array.isArray(candidate.lines) || candidate.lines.length === 0) {
+      return null;
+    }
+    return candidate;
+  }, [location.state]);
 
   const vendorSearchId = useId();
   const vendorSelectId = useId();
@@ -69,13 +84,27 @@ export function CreatePurchaseOrderPage({
   const vendorRequestSeqRef = useRef(0);
 
   // Selected vendor & PO draft state
-  const [selectedVendorId, setSelectedVendorId] = useState('');
-  const [selectedVendorRecord, setSelectedVendorRecord] = useState<Vendor | null>(null);
+  const [selectedVendorId, setSelectedVendorId] = useState(
+    () =>
+      initialPrefill?.vendorRecord?.active
+        ? initialPrefill.vendorRecord.vendorId
+        : (initialPrefill?.vendorId ?? ''),
+  );
+  const [selectedVendorRecord, setSelectedVendorRecord] = useState<Vendor | null>(
+    () => (initialPrefill?.vendorRecord?.active ? initialPrefill.vendorRecord : null),
+  );
   const [orderDate, setOrderDate] = useState(() => getShopLocalDateIso());
-  const nextLineIdRef = useRef(2);
-  const [lines, setLines] = useState<DraftLine[]>([
-    { localId: 1, sku: null, orderedQuantityRaw: '1', agreedUnitCostRaw: '' },
-  ]);
+  const nextLineIdRef = useRef((initialPrefill?.lines.length ?? 0) + 2);
+  const [lines, setLines] = useState<DraftLine[]>(() =>
+    initialPrefill
+      ? initialPrefill.lines.map((entry, idx) => ({
+          localId: idx + 1,
+          sku: entry.sku,
+          orderedQuantityRaw: String(entry.orderedQuantity),
+          agreedUnitCostRaw: '',
+        }))
+      : [{ localId: 1, sku: null, orderedQuantityRaw: '1', agreedUnitCostRaw: '' }],
+  );
 
   // Modals
   const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
@@ -420,6 +449,18 @@ export function CreatePurchaseOrderPage({
           </p>
         </div>
       </div>
+
+      {initialPrefill ? (
+        <div className="alert-banner alert-banner--info" role="status">
+          <div className="alert-banner__content">
+            <p>
+              Loaded <strong>{initialPrefill.lines.length}</strong> SKU line
+              {initialPrefill.lines.length === 1 ? '' : 's'} from What to Buy. Confirm one active
+              vendor, verify quantities, enter any agreed unit costs, and submit when ready.
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       {submitError ? (
         <div

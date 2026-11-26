@@ -1,0 +1,154 @@
+@layer components {
+  .reports-subnav {
+    border-block-end: 1px solid var(--border-subtle);
+  }
+
+  /* Single-row horizontally scrollable nav per tabs guidance on narrow screens */
+  .reports-subnav__list {
+    list-style: none;
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 0.25rem;
+    scroll-snap-type: inline proximity;
+    scrollbar-width: thin;
+  }
+
+  .reports-subnav__item {
+    flex: none;
+    scroll-snap-align: start;
+  }
+
+  .reports-subnav__link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 2.75rem;
+    padding-block: 0.5rem;
+    padding-inline: 1rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-weight: 600;
+    white-space: nowrap;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  }
+
+  .reports-subnav__link:hover {
+    background-color: var(--bg-subtle);
+    color: var(--text-primary);
+  }
+
+  .reports-subnav__link[aria-current='page'] {
+    color: var(--accent-soft-text);
+    background-color: var(--bg-surface);
+  }
+
+  /* Use border on pseudo-element rather than background alone (WCAG 1.4.1 & forced-colors) */
+  .reports-subnav__link[aria-current='page']::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: -1px;
+    border-block-end: 3px solid var(--accent);
+  }
+
+  .report-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11.5rem, 1fr));
+    gap: 0.875rem;
+  }
+
+  .report-kpi-card {
+    padding: 0.875rem 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+    background-color: var(--bg-surface);
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .report-kpi-card--highlight {
+    border-color: var(--accent);
+    background-color: var(--accent-soft);
+  }
+
+  .report-kpi-card--warning {
+    border-color: var(--warning-border);
+    background-color: var(--warning-bg);
+  }
+
+  .report-kpi-card__label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-secondary);
+  }
+
+  .report-kpi-card__value {
+    font-size: clamp(1.125rem, 1rem + 0.45vw, 1.4rem);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+  }
+
+  .report-kpi-card__note {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+  }
+
+  .report-unavailable-value {
+    color: var(--warning-text);
+    font-weight: 600;
+    font-style: italic;
+  }
+
+  .report-filter-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .report-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-control);
+    background-color: var(--bg-subtle);
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .report-attribution-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.55rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: 1px solid var(--border-control);
+    white-space: nowrap;
+  }
+
+  .report-attribution-pill--vendor {
+    background-color: var(--accent-soft);
+    color: var(--accent-soft-text);
+    border-color: var(--accent);
+  }
+
+  .report-attribution-pill--unknown {
+    background-color: var(--warning-bg);
+    color: var(--warning-text);
+    border-color: var(--warning-border);
+  }
+
+  @container (inline-size < 46rem) {
+    /* MANDATORY: Hide column header from layout and screen readers. */
+    .reports-table thead {
+      display: none;
+    }
+  }
+}

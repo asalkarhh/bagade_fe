@@ -84,8 +84,18 @@ The app will be available at `http://localhost:5173`. Vite proxies `/api` reques
 | `/inventory/stock-counts/:countId` | `OWNER`, `WORKER` | Physical stock count workspace with barcode/camera scanning, line saves, recount conflict handling & posting (FE07) |
 | `/customers` | `OWNER`, `WORKER` | Customer search, inline customer creation & direct link to view customer bills (FE06) |
 | `/expenses` | `OWNER`, `WORKER` | Operating expenses list, date/category filters, expense creation & optimistic-locked edits (FE07) |
-| `/reports` | `OWNER` only | Placeholder (pending; shows Access Denied for `WORKER`) |
-| `/what-to-buy` | `OWNER` only | Placeholder (pending; shows Access Denied for `WORKER`) |
+| `/reports` | `OWNER` only | Sales & profit report with month-start-through-today default, whole-shop vs filtered expense separation & cost completeness (FE08; Access Denied for `WORKER`) |
+| `/reports/vendors` | `OWNER` only | Vendor performance cohorts comparing Direct Batch, FIFO, and Unknown Attribution (`AUDIT_SURPLUS`), sell-through & weighted days to sell (FE08) |
+| `/reports/stock-ageing` | `OWNER` only | Active sellable batches with days on hand, known value & unknown receipt-date/cost visibility (FE08) |
+| `/reports/collections` | `OWNER` only | Cash/UPI collections, refunds, credit sales, and cumulative outstanding balance as of end date (FE08) |
+| `/reports/stock-audits` | `OWNER` only | Posted physical stock audit lines (including zero-adjustment matches), reasons, worker attribution & timestamps (FE08) |
+| `/what-to-buy` | `OWNER` only | Replenishment planning, default vs period minimum stock targets (`PUT /api/v1/purchase-targets/{skuId}`), buying list selection & PO draft prefill (FE08; Access Denied for `WORKER`) |
+
+## Backend API Dependencies & Contract Notes Noted in FE08
+
+- **Purchase Planning Page Size Query Param**: `GET /api/v1/purchase-planning` expects `pageSize` (default `25`) rather than `size`, whereas reporting endpoints expect `size`. The planning API client maps to `pageSize` accordingly.
+- **Vendor Attribution Model**: `GET /api/v1/reports/vendors` distinguishes direct internal barcode scans (`directBatchSoldUnits`), oldest-first FIFO allocations (`fifoSoldUnits`), and audit surplus cohorts (`batchSource: "AUDIT_SURPLUS"`, `"Unknown Vendor (Audit Surplus)"`) rather than a third separate unlinked sale counter; both supplier cohorts and audit-surplus cohorts are explicitly labeled.
+- **Last Purchase Cost Not Pre-populated on Buying List**: `GET /api/v1/purchase-planning` returns `currentSellingPrice` and `pastVendors` without supplier unit costs, so selected SKUs and quantities prefill into `/purchases/new` where the owner reviews agreed unit costs and confirms one active vendor before saving through `POST /api/v1/purchase-orders`.
 
 ## Backend API Dependencies Noted in FE07
 

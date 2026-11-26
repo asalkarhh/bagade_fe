@@ -52,6 +52,19 @@ export function formatInrDisplay(decimalPrice: string): string {
   return `₹${formattedInt}.${formattedDec}`;
 }
 
+export function formatSignedInrDisplay(decimalPrice: string): string {
+  const trimmed = decimalPrice.trim();
+  if (trimmed.startsWith('-')) {
+    const unsigned = trimmed.slice(1).trim();
+    const formatted = formatInrDisplay(unsigned);
+    if (formatted === '—' || formatted === '₹0.00') {
+      return formatted;
+    }
+    return `-${formatted}`;
+  }
+  return formatInrDisplay(trimmed);
+}
+
 export function parseInrToPaise(raw: string): number | null {
   const trimmed = raw.trim();
   if (!INR_INPUT_PATTERN.test(trimmed)) {
