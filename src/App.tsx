@@ -11,6 +11,7 @@ import { BillDetailPage } from './billing/BillDetailPage.tsx';
 import { BillHistoryPage } from './billing/BillHistoryPage.tsx';
 import { BillingCounterPage } from './billing/BillingCounterPage.tsx';
 import { BillingLayout } from './billing/BillingLayout.tsx';
+import { CustomersPage } from './billing/CustomersPage.tsx';
 import { CreatePurchaseOrderPage } from './purchasing/CreatePurchaseOrderPage.tsx';
 import { PurchaseOrderDetailPage } from './purchasing/PurchaseOrderDetailPage.tsx';
 import { PurchaseOrdersPage } from './purchasing/PurchaseOrdersPage.tsx';
@@ -25,6 +26,7 @@ export function AppRoutes() {
     (module) =>
       module.roles.includes('WORKER') &&
       module.id !== 'billing' &&
+      module.id !== 'customers' &&
       module.id !== 'products' &&
       module.id !== 'purchases' &&
       module.id !== 'inventory',
@@ -62,6 +64,8 @@ export function AppRoutes() {
 
           <Route path="/inventory" element={<InventoryPage />} />
           <Route path="/inventory/receipts/:receiptId" element={<StockReceiptDetailPage />} />
+
+          <Route path="/customers" element={<CustomersPage />} />
 
           {placeholderModules.map((module) => (
             <Route

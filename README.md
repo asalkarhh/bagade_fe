@@ -71,7 +71,7 @@ The app will be available at `http://localhost:5173`. Vite proxies `/api` reques
 | `/products` | `OWNER`, `WORKER` | Working product catalog, categories, size variants, INR price & status updates (FE02) |
 | `/billing` | `OWNER`, `WORKER` | Working counter POS with barcode/camera/product lookup, differing-MRP batch picker, Cash/UPI/credit payments, idempotent checkout & 80 mm printing (FE05) |
 | `/billing/history` | `OWNER`, `WORKER` | Issued bills search by bill number, date range & customer filter with pagination (FE05) |
-| `/billing/:billId` | `OWNER`, `WORKER` | Bill snapshot detail, revision selector, 80 mm print view & PDF receipt download (FE05) |
+| `/billing/:billId` | `OWNER`, `WORKER` | Bill detail, edit revisions, partial/non-sellable returns, exchanges, cancellation, credit payment collection, 80 mm print & PDF download (FE05/FE06) |
 | `/purchases` | `OWNER`, `WORKER` | Working Purchase Orders list with vendor, status, and date filters (FE03) |
 | `/purchases/vendors` | `OWNER`, `WORKER` | Working Vendors list & creation with Active/Inactive/All filter (FE03) |
 | `/purchases/new` | `OWNER`, `WORKER` | Create Purchase Order with inline vendor creation & SKU picker (FE03) |
@@ -80,7 +80,7 @@ The app will be available at `http://localhost:5173`. Vite proxies `/api` reques
 | `/purchases/:poId/receive` | `OWNER`, `WORKER` | Receive Stock against an open Purchase Order (FE04) |
 | `/inventory` | `OWNER`, `WORKER` | Working inventory stock balances, category/SKU filtering, expandable batches & tag reprinting (FE04) |
 | `/inventory/receipts/:receiptId` | `OWNER`, `WORKER` | Posted Stock Receipt view with batch tag generation and Code 128 print preview (FE04) |
-| `/customers` | `OWNER`, `WORKER` | Placeholder (pending) |
+| `/customers` | `OWNER`, `WORKER` | Customer search, inline customer creation & direct link to view customer bills (FE06) |
 | `/expenses` | `OWNER`, `WORKER` | Placeholder (pending) |
 | `/reports` | `OWNER` only | Placeholder (pending; shows Access Denied for `WORKER`) |
 | `/what-to-buy` | `OWNER` only | Placeholder (pending; shows Access Denied for `WORKER`) |

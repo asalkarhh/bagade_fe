@@ -63,6 +63,11 @@ function makeMockBillingApi(overrides: Partial<BillingApi> = {}): BillingApi {
       blob: new Blob(['%PDF-1.4\n'], { type: 'application/pdf' }),
       filename: 'BILL-2026-0001.pdf',
     })),
+    reviseBill: vi.fn(),
+    returnItems: vi.fn(),
+    exchangeItems: vi.fn(),
+    cancelBill: vi.fn(),
+    collectPayment: vi.fn(),
     ...overrides,
   };
 }

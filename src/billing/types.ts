@@ -3,6 +3,8 @@ import type { EligibleBatch } from '../inventory/types.ts';
 export type PaymentMode = 'CASH' | 'UPI';
 export type PaymentDirection = 'PAYMENT' | 'REFUND';
 export type BillStatus = 'ISSUED' | 'PARTIALLY_RETURNED' | 'RETURNED' | 'CANCELLED';
+export type StockCondition = 'SELLABLE' | 'NON_SELLABLE';
+export type MovementType = 'RECEIPT' | 'SALE' | 'RETURN' | 'ADJUSTMENT';
 
 export interface Customer {
   customerId: string;
@@ -245,4 +247,112 @@ export interface BillPrintData {
   balanceDue: string;
   payments: BillPrintPayment[];
   corrections: BillPrintCorrection[];
+}
+
+export interface SettlementEntryInput {
+  direction: PaymentDirection;
+  mode: PaymentMode;
+  amount: string;
+  reference?: string | null;
+}
+
+export interface BillStockEffect {
+  skuId: string;
+  skuCode: string;
+  batchId: string;
+  stockCondition: StockCondition;
+  movementType: MovementType;
+  quantityDelta: number;
+  resultingBatchQuantity: number;
+}
+
+export interface EditBillLineInput {
+  lineId?: string | null;
+  skuId: string;
+  quantity: number;
+  batchId?: string | null;
+  discountAmount?: string | null;
+  unitPriceOverride?: string | null;
+}
+
+export interface ReviseBillInput {
+  expectedVersion: number;
+  reason: string;
+  lines: EditBillLineInput[];
+  expectedTotal: string;
+  settlement?: SettlementEntryInput[];
+}
+
+export interface EditBillResponse {
+  billId: string;
+  revision: number;
+  version: number;
+  total: string;
+  adjustmentAmount: string;
+  balanceDue: string;
+}
+
+export interface ReturnLineInput {
+  lineId: string;
+  quantity: number;
+  disposition: StockCondition;
+}
+
+export interface ReturnBillInput {
+  expectedVersion: number;
+  reason: string;
+  returnedLines: ReturnLineInput[];
+  settlement?: SettlementEntryInput[];
+}
+
+export interface ReturnBillResponse {
+  returnId: string;
+  billId: string;
+  version: number;
+  balanceDue: string;
+  stockEffects: BillStockEffect[];
+}
+
+export interface ExchangeBillInput {
+  expectedVersion: number;
+  reason: string;
+  returnedLines: ReturnLineInput[];
+  replacementLines: BillLineInput[];
+  settlement?: SettlementEntryInput[];
+}
+
+export interface ExchangeBillResponse {
+  exchangeId: string;
+  billId: string;
+  version: number;
+  priceDifference: string;
+  balanceDue: string;
+  stockEffects: BillStockEffect[];
+}
+
+export interface CancelBillInput {
+  expectedVersion: number;
+  reason: string;
+  settlement?: SettlementEntryInput[];
+}
+
+export interface CancelBillResponse {
+  billId: string;
+  version: number;
+  status: BillStatus;
+  balanceDue: string;
+}
+
+export interface CollectBillPaymentInput {
+  expectedVersion: number;
+  mode: PaymentMode;
+  amount: string;
+  reference?: string | null;
+}
+
+export interface CollectBillPaymentResponse {
+  paymentId: string;
+  billId: string;
+  version: number;
+  balanceDue: string;
 }

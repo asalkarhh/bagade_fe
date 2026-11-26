@@ -174,4 +174,175 @@ describe('billingApi', () => {
       requests.some((r) => r.url === '/api/v1/bills/bill-1/print?format=pdf&revision=2'),
     ).toBe(true);
   });
+
+  it('sends FE06 revision, return, exchange, cancellation, and credit payment payloads with Idempotency-Key and CSRF', async () => {
+    const requests: { url: string; method: string; headers: Headers; body: unknown }[] = [];
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+      const headers = new Headers(init?.headers);
+      const body = typeof init?.body === 'string' ? JSON.parse(init.body) : undefined;
+      if (url === '/api/v1/auth/csrf') {
+        return jsonResponse({ csrfToken: 'csrf-fe06' });
+      }
+      requests.push({ url, method, headers, body });
+
+      if (url === '/api/v1/bills/bill-1/revisions') {
+        return jsonResponse({
+          billId: 'bill-1',
+          revision: 2,
+          version: 1,
+          total: '8500.00',
+          adjustmentAmount: '-500.00',
+          balanceDue: '0.00',
+        });
+      }
+      if (url === '/api/v1/bills/bill-1/returns') {
+        return jsonResponse(
+          {
+            returnId: 'ret-1',
+            billId: 'bill-1',
+            version: 2,
+            balanceDue: '0.00',
+            stockEffects: [],
+          },
+          201,
+        );
+      }
+      if (url === '/api/v1/bills/bill-1/exchanges') {
+        return jsonResponse(
+          {
+            exchangeId: 'exch-1',
+            billId: 'bill-1',
+            version: 3,
+            priceDifference: '150.00',
+            balanceDue: '0.00',
+            stockEffects: [],
+          },
+          201,
+        );
+      }
+      if (url === '/api/v1/bills/bill-1/cancellations') {
+        return jsonResponse({
+          billId: 'bill-1',
+          version: 4,
+          status: 'CANCELLED',
+          balanceDue: '0.00',
+        });
+      }
+      if (url === '/api/v1/bills/bill-1/payments') {
+        return jsonResponse(
+          {
+            paymentId: 'pay-9',
+            billId: 'bill-1',
+            version: 5,
+            balanceDue: '200.00',
+          },
+          201,
+        );
+      }
+      throw new Error(`Unexpected ${method} ${url}`);
+    });
+
+    const api = createBillingApi(
+      createApiClient({ fetchImpl: fetchMock as unknown as typeof fetch }),
+    );
+
+    await api.reviseBill(
+      'bill-1',
+      {
+        expectedVersion: 0,
+        reason: '  Agreed price discount  ',
+        lines: [
+          {
+            lineId: 'll-1',
+            skuId: 'sku-1',
+            quantity: 2,
+            unitPriceOverride: '4250.00',
+            discountAmount: '',
+          },
+        ],
+        expectedTotal: '8500.00',
+        settlement: [
+          { direction: 'REFUND', mode: 'CASH', amount: '500.00', reference: '  CASH-REF  ' },
+        ],
+      },
+      'idem-rev-1',
+    );
+    expect(requests[0]).toMatchObject({
+      url: '/api/v1/bills/bill-1/revisions',
+      body: {
+        expectedVersion: 0,
+        reason: 'Agreed price discount',
+        lines: [{ lineId: 'll-1', skuId: 'sku-1', quantity: 2, unitPriceOverride: '4250.00' }],
+        expectedTotal: '8500.00',
+        settlement: [
+          { direction: 'REFUND', mode: 'CASH', amount: '500.00', reference: 'CASH-REF' },
+        ],
+      },
+    });
+    expect(requests[0].headers.get('Idempotency-Key')).toBe('idem-rev-1');
+
+    await api.returnItems(
+      'bill-1',
+      {
+        expectedVersion: 1,
+        reason: 'Damaged piece',
+        returnedLines: [{ lineId: 'll-1', quantity: 1, disposition: 'NON_SELLABLE' }],
+        settlement: [],
+      },
+      'idem-ret-1',
+    );
+    expect(requests[1].headers.get('Idempotency-Key')).toBe('idem-ret-1');
+    expect(requests[1].body).toEqual({
+      expectedVersion: 1,
+      reason: 'Damaged piece',
+      returnedLines: [{ lineId: 'll-1', quantity: 1, disposition: 'NON_SELLABLE' }],
+      settlement: [],
+    });
+
+    await api.exchangeItems(
+      'bill-1',
+      {
+        expectedVersion: 2,
+        reason: 'Size 32 to 34',
+        returnedLines: [{ lineId: 'll-32', quantity: 1, disposition: 'SELLABLE' }],
+        replacementLines: [{ skuId: 'sku-34', quantity: 1, batchId: 'b-34' }],
+        settlement: [{ direction: 'PAYMENT', mode: 'UPI', amount: '150.00', reference: 'U1' }],
+      },
+      'idem-exch-1',
+    );
+    expect(requests[2].headers.get('Idempotency-Key')).toBe('idem-exch-1');
+    expect(requests[2].body).toEqual({
+      expectedVersion: 2,
+      reason: 'Size 32 to 34',
+      returnedLines: [{ lineId: 'll-32', quantity: 1, disposition: 'SELLABLE' }],
+      replacementLines: [{ skuId: 'sku-34', quantity: 1, batchId: 'b-34' }],
+      settlement: [{ direction: 'PAYMENT', mode: 'UPI', amount: '150.00', reference: 'U1' }],
+    });
+
+    await api.cancelBill(
+      'bill-1',
+      {
+        expectedVersion: 3,
+        reason: 'Cancelled order',
+        settlement: [{ direction: 'REFUND', mode: 'CASH', amount: '180.00' }],
+      },
+      'idem-cxl-1',
+    );
+    expect(requests[3].headers.get('Idempotency-Key')).toBe('idem-cxl-1');
+
+    await api.collectPayment(
+      'bill-1',
+      { expectedVersion: 4, mode: 'UPI', amount: '300.00', reference: '   ' },
+      'idem-pay-1',
+    );
+    expect(requests[4].headers.get('Idempotency-Key')).toBe('idem-pay-1');
+    expect(requests[4].body).toEqual({
+      expectedVersion: 4,
+      mode: 'UPI',
+      amount: '300.00',
+    });
+  });
 });

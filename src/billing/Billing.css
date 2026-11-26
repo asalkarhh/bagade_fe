@@ -268,6 +268,136 @@
     color: var(--success-text);
   }
 
+  .billing-workflow-panel {
+    display: grid;
+    gap: 1rem;
+    border: 2px solid var(--accent);
+  }
+
+  .billing-workflow-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+    padding-block-end: 0.75rem;
+    border-block-end: 1px solid var(--border-subtle);
+  }
+
+  .billing-workflow-billref {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 0.75rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    align-items: center;
+  }
+
+  .billing-settlement-row__fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+    gap: 0.5rem 0.625rem;
+    align-items: end;
+  }
+
+  .billing-exchange-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+  }
+
+  @media (min-width: 62rem) {
+    .billing-exchange-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .billing-disposition-fieldset {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .billing-disposition-fieldset legend {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    padding: 0;
+  }
+
+  .billing-disposition-options {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .billing-radio-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border-control);
+    background-color: var(--bg-surface);
+    cursor: pointer;
+    min-block-size: 2.75rem;
+    font-size: 0.875rem;
+  }
+
+  .billing-radio-card input[type='radio'] {
+    inline-size: 1.15rem;
+    block-size: 1.15rem;
+    margin-block-start: 0.15rem;
+    accent-color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .billing-radio-card:has(input:checked) {
+    background-color: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent-soft-text);
+  }
+
+  .billing-radio-card:has(input:focus-visible) {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  .billing-review-box {
+    border: 1px solid var(--border-control);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    background-color: var(--bg-subtle);
+    display: grid;
+    gap: 0.875rem;
+  }
+
+  .billing-reason-textarea {
+    inline-size: 100%;
+    min-block-size: 4.5rem;
+    padding: 0.625rem 0.75rem;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border-control);
+    background-color: var(--bg-surface);
+    color: var(--text-primary);
+    font-size: max(1rem, 1em);
+    resize: vertical;
+  }
+
+  .billing-reason-textarea[aria-invalid='true'] {
+    border-color: var(--danger-border);
+    background-color: var(--danger-bg);
+  }
+
+  .billing-actions-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
   /* 80 mm Thermal Receipt Print View */
   .receipt-80mm-stage {
     padding: 1rem;

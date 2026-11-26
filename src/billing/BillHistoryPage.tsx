@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { isAbortError, isApiClientError } from '../api/errors.ts';
 import { formatInrDisplay } from '../utils/inrPrice.ts';
 import { billingApi, type BillingApi } from './billingApi.ts';
@@ -24,6 +24,7 @@ interface BillHistoryQueryState {
 }
 
 export function BillHistoryPage({ api = billingApi }: BillHistoryPageProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const billNumberId = useId();
   const fromDateId = useId();
   const toDateId = useId();
@@ -33,7 +34,17 @@ export function BillHistoryPage({ api = billingApi }: BillHistoryPageProps) {
   const [billNumberInput, setBillNumberInput] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
-  const [customerFilter, setCustomerFilter] = useState<Customer | null>(null);
+  const [customerFilter, setCustomerFilter] = useState<Customer | null>(() => {
+    const id = searchParams.get('customerId')?.trim() || '';
+    if (!id) {
+      return null;
+    }
+    return {
+      customerId: id,
+      name: searchParams.get('customerName')?.trim() || id,
+      contact: searchParams.get('customerContact')?.trim() || null,
+    };
+  });
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -144,11 +155,30 @@ export function BillHistoryPage({ api = billingApi }: BillHistoryPageProps) {
     }
   };
 
+  const syncCustomerSearchParam = (customer: Customer | null) => {
+    const next = new URLSearchParams(searchParams);
+    if (customer) {
+      next.set('customerId', customer.customerId);
+      next.set('customerName', customer.name);
+      if (customer.contact) {
+        next.set('customerContact', customer.contact);
+      } else {
+        next.delete('customerContact');
+      }
+    } else {
+      next.delete('customerId');
+      next.delete('customerName');
+      next.delete('customerContact');
+    }
+    setSearchParams(next, { replace: true });
+  };
+
   const handleReset = () => {
     setBillNumberInput('');
     setFromDate('');
     setToDate('');
     setCustomerFilter(null);
+    syncCustomerSearchParam(null);
     setPage(0);
   };
 
@@ -249,6 +279,7 @@ export function BillHistoryPage({ api = billingApi }: BillHistoryPageProps) {
                     className="btn-table-action"
                     onClick={() => {
                       setCustomerFilter(null);
+                      syncCustomerSearchParam(null);
                       setPage(0);
                     }}
                   >
@@ -462,6 +493,7 @@ export function BillHistoryPage({ api = billingApi }: BillHistoryPageProps) {
         onClose={() => setIsCustomerModalOpen(false)}
         onSelectCustomer={(customer) => {
           setCustomerFilter(customer);
+          syncCustomerSearchParam(customer);
           setPage(0);
         }}
       />

@@ -7,11 +7,23 @@ import type {
   BillPrintData,
   BillSearchParams,
   BillSummary,
+  CancelBillInput,
+  CancelBillResponse,
+  CollectBillPaymentInput,
+  CollectBillPaymentResponse,
   CreateBillInput,
   CreateBillResponse,
   CreateCustomerInput,
   Customer,
   CustomerSearchParams,
+  EditBillLineInput,
+  EditBillResponse,
+  ExchangeBillInput,
+  ExchangeBillResponse,
+  ReturnBillInput,
+  ReturnBillResponse,
+  ReviseBillInput,
+  SettlementEntryInput,
 } from './types.ts';
 
 function normalizeOptionalText(value: string | null | undefined): string | null {
@@ -22,12 +34,15 @@ function normalizeOptionalText(value: string | null | undefined): string | null 
   return trimmed.length > 0 ? trimmed : null;
 }
 
-function serializeBillLines(lines: BillLineInput[]): Record<string, unknown>[] {
+function serializeBillLines(lines: (BillLineInput | EditBillLineInput)[]): Record<string, unknown>[] {
   return lines.map((line) => {
     const out: Record<string, unknown> = {
       skuId: line.skuId,
       quantity: line.quantity,
     };
+    if ('lineId' in line && line.lineId) {
+      out.lineId = line.lineId;
+    }
     if (line.batchId) {
       out.batchId = line.batchId;
     }
@@ -40,6 +55,23 @@ function serializeBillLines(lines: BillLineInput[]): Record<string, unknown>[] {
       out.unitPriceOverride = override;
     }
     return out;
+  });
+}
+
+function serializeSettlementEntries(
+  settlement?: SettlementEntryInput[],
+): Record<string, unknown>[] {
+  if (!settlement || settlement.length === 0) {
+    return [];
+  }
+  return settlement.map((entry) => {
+    const ref = normalizeOptionalText(entry.reference);
+    return {
+      direction: entry.direction,
+      mode: entry.mode,
+      amount: entry.amount.trim(),
+      ...(ref !== null ? { reference: ref } : {}),
+    };
   });
 }
 
@@ -63,6 +95,31 @@ export interface BillingApi {
     revision?: number | null,
     signal?: AbortSignal,
   ): Promise<BlobDownloadResponse>;
+  reviseBill(
+    billId: string,
+    input: ReviseBillInput,
+    idempotencyKey: string,
+  ): Promise<EditBillResponse>;
+  returnItems(
+    billId: string,
+    input: ReturnBillInput,
+    idempotencyKey: string,
+  ): Promise<ReturnBillResponse>;
+  exchangeItems(
+    billId: string,
+    input: ExchangeBillInput,
+    idempotencyKey: string,
+  ): Promise<ExchangeBillResponse>;
+  cancelBill(
+    billId: string,
+    input: CancelBillInput,
+    idempotencyKey: string,
+  ): Promise<CancelBillResponse>;
+  collectPayment(
+    billId: string,
+    input: CollectBillPaymentInput,
+    idempotencyKey: string,
+  ): Promise<CollectBillPaymentResponse>;
 }
 
 export function createBillingApi(client: ApiClient = apiClient): BillingApi {
@@ -175,6 +232,125 @@ export function createBillingApi(client: ApiClient = apiClient): BillingApi {
         },
         signal,
       });
+    },
+
+    async reviseBill(
+      billId: string,
+      input: ReviseBillInput,
+      idempotencyKey: string,
+    ): Promise<EditBillResponse> {
+      const settlement = serializeSettlementEntries(input.settlement);
+      return client.post<EditBillResponse>(
+        `/bills/${encodeURIComponent(billId)}/revisions`,
+        {
+          expectedVersion: input.expectedVersion,
+          reason: input.reason.trim(),
+          lines: serializeBillLines(input.lines),
+          expectedTotal: input.expectedTotal.trim(),
+          settlement,
+        },
+        {
+          headers: {
+            'Idempotency-Key': idempotencyKey,
+          },
+        },
+      );
+    },
+
+    async returnItems(
+      billId: string,
+      input: ReturnBillInput,
+      idempotencyKey: string,
+    ): Promise<ReturnBillResponse> {
+      const settlement = serializeSettlementEntries(input.settlement);
+      return client.post<ReturnBillResponse>(
+        `/bills/${encodeURIComponent(billId)}/returns`,
+        {
+          expectedVersion: input.expectedVersion,
+          reason: input.reason.trim(),
+          returnedLines: input.returnedLines.map((line) => ({
+            lineId: line.lineId,
+            quantity: line.quantity,
+            disposition: line.disposition,
+          })),
+          settlement,
+        },
+        {
+          headers: {
+            'Idempotency-Key': idempotencyKey,
+          },
+        },
+      );
+    },
+
+    async exchangeItems(
+      billId: string,
+      input: ExchangeBillInput,
+      idempotencyKey: string,
+    ): Promise<ExchangeBillResponse> {
+      const settlement = serializeSettlementEntries(input.settlement);
+      return client.post<ExchangeBillResponse>(
+        `/bills/${encodeURIComponent(billId)}/exchanges`,
+        {
+          expectedVersion: input.expectedVersion,
+          reason: input.reason.trim(),
+          returnedLines: input.returnedLines.map((line) => ({
+            lineId: line.lineId,
+            quantity: line.quantity,
+            disposition: line.disposition,
+          })),
+          replacementLines: serializeBillLines(input.replacementLines),
+          settlement,
+        },
+        {
+          headers: {
+            'Idempotency-Key': idempotencyKey,
+          },
+        },
+      );
+    },
+
+    async cancelBill(
+      billId: string,
+      input: CancelBillInput,
+      idempotencyKey: string,
+    ): Promise<CancelBillResponse> {
+      const settlement = serializeSettlementEntries(input.settlement);
+      return client.post<CancelBillResponse>(
+        `/bills/${encodeURIComponent(billId)}/cancellations`,
+        {
+          expectedVersion: input.expectedVersion,
+          reason: input.reason.trim(),
+          settlement,
+        },
+        {
+          headers: {
+            'Idempotency-Key': idempotencyKey,
+          },
+        },
+      );
+    },
+
+    async collectPayment(
+      billId: string,
+      input: CollectBillPaymentInput,
+      idempotencyKey: string,
+    ): Promise<CollectBillPaymentResponse> {
+      const ref = normalizeOptionalText(input.reference);
+      return client.post<CollectBillPaymentResponse>(
+        `/bills/${encodeURIComponent(billId)}/payments`,
+        {
+          expectedVersion: input.expectedVersion,
+          mode: input.mode,
+          amount: input.amount.trim(),
+          ...(ref !== null ? { reference: ref } : {}),
+        },
+        {
+          headers: {
+            'Idempotency-Key': idempotencyKey,
+          },
+        },
+      );
     },
   };
 }

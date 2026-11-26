@@ -1,20 +1,52 @@
-import { useEffect, useId, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { isAbortError, isApiClientError } from '../api/errors.ts';
+import { catalogApi, type CatalogApi } from '../catalog/catalogApi.ts';
+import { inventoryApi, type InventoryApi } from '../inventory/inventoryApi.ts';
 import { triggerBrowserBlobDownload } from '../utils/blobDownload.ts';
-import { formatInrDisplay } from '../utils/inrPrice.ts';
+import { formatInrDisplay, parseInrToPaise } from '../utils/inrPrice.ts';
 import { formatShopTimestamp } from '../utils/shopDate.ts';
 import { billingApi, type BillingApi } from './billingApi.ts';
+import { BillCancelWorkflow } from './components/BillCancelWorkflow.tsx';
+import { BillEditWorkflow } from './components/BillEditWorkflow.tsx';
+import {
+  BillExchangeWorkflow,
+  ExchangeConfirmationBanner,
+} from './components/BillExchangeWorkflow.tsx';
 import { BillPrintPreviewModal } from './components/BillPrintPreviewModal.tsx';
+import {
+  BillReturnWorkflow,
+  ReturnConfirmationBanner,
+} from './components/BillReturnWorkflow.tsx';
+import { CollectCreditPaymentWorkflow } from './components/CollectCreditPaymentWorkflow.tsx';
 import { getBillStatusDisplay } from './statusLabels.ts';
-import type { BillDetail } from './types.ts';
+import type {
+  BillDetail,
+  CancelBillResponse,
+  CollectBillPaymentResponse,
+  EditBillResponse,
+  ExchangeBillResponse,
+  ReturnBillResponse,
+} from './types.ts';
 import '../catalog/ProductsPage.css';
 import '../purchasing/Purchasing.css';
+import '../inventory/Inventory.css';
 import './Billing.css';
 
 export interface BillDetailPageProps {
   api?: BillingApi;
+  inventory?: InventoryApi;
+  catalog?: CatalogApi;
 }
+
+type ActiveWorkflowKind = 'edit' | 'return' | 'exchange' | 'cancel' | 'payment' | null;
+
+type WorkflowConfirmationState =
+  | { kind: 'edit'; message: string; result: EditBillResponse }
+  | { kind: 'return'; message: string; result: ReturnBillResponse }
+  | { kind: 'exchange'; message: string; result: ExchangeBillResponse }
+  | { kind: 'cancel'; message: string; result: CancelBillResponse }
+  | { kind: 'payment'; message: string; result: CollectBillPaymentResponse };
 
 interface BillDetailState {
   billId: string;
@@ -22,18 +54,25 @@ interface BillDetailState {
   error: { message: string; code?: string; requestId?: string | null } | null;
 }
 
-export function BillDetailPage({ api = billingApi }: BillDetailPageProps) {
+export function BillDetailPage({
+  api = billingApi,
+  inventory = inventoryApi,
+  catalog = catalogApi,
+}: BillDetailPageProps) {
   const { billId = '' } = useParams<{ billId: string }>();
   const linesCaptionId = useId();
   const paymentsCaptionId = useId();
+  const eventsCaptionId = useId();
   const revisionSelectId = useId();
 
   const [refreshTick, setRefreshTick] = useState(0);
   const [detailState, setDetailState] = useState<BillDetailState | null>(null);
   const [selectedRevisionOverride, setSelectedRevisionOverride] = useState<{
     billId: string;
-    revision: number;
+    revision: number | null;
   } | null>(null);
+  const [activeWorkflow, setActiveWorkflow] = useState<ActiveWorkflowKind>(null);
+  const [confirmation, setConfirmation] = useState<WorkflowConfirmationState | null>(null);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
@@ -71,6 +110,33 @@ export function BillDetailPage({ api = billingApi }: BillDetailPageProps) {
       controller.abort();
     };
   }, [api, billId, refreshTick]);
+
+  const reloadBill = useCallback(async (): Promise<BillDetail | null> => {
+    if (!billId) {
+      return null;
+    }
+    try {
+      const latest = await api.getBill(billId);
+      setDetailState({ billId, bill: latest, error: null });
+      return latest;
+    } catch {
+      return null;
+    }
+  }, [api, billId]);
+
+  const refreshDependentCaches = useCallback(
+    async (stockChanged: boolean) => {
+      await reloadBill();
+      void Promise.resolve(api.listBills({ page: 0, size: 25 })).catch(() => undefined);
+      if (stockChanged) {
+        void Promise.resolve(inventory.listInventory({ page: 0, size: 25 })).catch(() => undefined);
+        void Promise.resolve(catalog.listSkus({ status: 'ACTIVE', page: 0, size: 25 })).catch(
+          () => undefined,
+        );
+      }
+    },
+    [api, catalog, inventory, reloadBill],
+  );
 
   const isLoading = Boolean(billId) && detailState?.billId !== billId;
   const bill = detailState?.billId === billId ? detailState.bill : null;
@@ -121,9 +187,16 @@ export function BillDetailPage({ api = billingApi }: BillDetailPageProps) {
 
   const statusDisplay = getBillStatusDisplay(bill.status);
   const selectedRevision =
-    selectedRevisionOverride?.billId === bill.billId
-      ? selectedRevisionOverride.revision
-      : bill.currentRevisionNumber;
+    selectedRevisionOverride?.billId === bill.billId ? selectedRevisionOverride.revision : null;
+
+  const balanceDuePaise = parseInrToPaise(bill.balanceDue) ?? 0;
+  const hasReturnableItems = bill.lines.some((line) => line.returnableQuantity > 0);
+  const isCancelled = bill.status === 'CANCELLED';
+
+  const canEdit = bill.status === 'ISSUED' || bill.status === 'PARTIALLY_RETURNED';
+  const canReturnOrExchange = !isCancelled && hasReturnableItems;
+  const canCancel = !isCancelled;
+  const canCollectPayment = !isCancelled && balanceDuePaise > 0;
 
   const handleDownloadPdf = async () => {
     if (isDownloadingPdf) {
@@ -134,7 +207,8 @@ export function BillDetailPage({ api = billingApi }: BillDetailPageProps) {
 
     try {
       const { blob, filename } = await api.downloadBillPdf(bill.billId, selectedRevision);
-      triggerBrowserBlobDownload(blob, filename || `${bill.billNumber}-rev${selectedRevision}.pdf`);
+      const fallbackSuffix = selectedRevision !== null ? `-rev${selectedRevision}` : '';
+      triggerBrowserBlobDownload(blob, filename || `${bill.billNumber}${fallbackSuffix}.pdf`);
     } catch (error) {
       setPdfError(
         isApiClientError(error)
@@ -144,6 +218,11 @@ export function BillDetailPage({ api = billingApi }: BillDetailPageProps) {
     } finally {
       setIsDownloadingPdf(false);
     }
+  };
+
+  const openWorkflow = (kind: ActiveWorkflowKind) => {
+    setConfirmation(null);
+    setActiveWorkflow(kind);
   };
 
   return (
@@ -157,7 +236,8 @@ export function BillDetailPage({ api = billingApi }: BillDetailPageProps) {
             {bill.billNumber}
           </h1>
           <p className="products-header__subtitle">
-            Saved bill snapshot, line totals, payments received, and 80 mm receipt printing.
+            Revision {bill.currentRevisionNumber} · Version {bill.version} · Corrections, returns,
+            exchanges, credit collections, and 80 mm receipts.
           </p>
         </div>
 
@@ -170,15 +250,19 @@ export function BillDetailPage({ api = billingApi }: BillDetailPageProps) {
               <select
                 id={revisionSelectId}
                 className="catalog-select"
-                value={selectedRevision}
+                value={selectedRevision === null ? 'current' : String(selectedRevision)}
                 onChange={(event) => {
                   setPdfError(null);
+                  const val = event.target.value;
                   setSelectedRevisionOverride({
                     billId: bill.billId,
-                    revision: Number(event.target.value),
+                    revision: val === 'current' ? null : Number(val),
                   });
                 }}
               >
+                <option value="current">
+                  Current receipt (Rev {bill.currentRevisionNumber} + corrections &amp; payments)
+                </option>
                 {bill.revisions.map((rev) => (
                   <option key={rev.revisionId} value={rev.revisionNumber}>
                     Rev {rev.revisionNumber} — {formatInrDisplay(rev.total)}
@@ -210,6 +294,170 @@ export function BillDetailPage({ api = billingApi }: BillDetailPageProps) {
         </div>
       </div>
 
+      {isCancelled ? (
+        <div className="alert-banner alert-banner--info" role="status">
+          <div className="alert-banner__content">
+            <p>
+              <strong>{bill.billNumber} is cancelled.</strong> The bill remains viewable and
+              printable, and no further edits, returns, exchanges, or credit collections can be
+              posted.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <section className="surface-card billing-counter-panel" aria-label="Bill correction and payment actions">
+          <div className="po-line-card__top">
+            <span className="catalog-label">Operations on {bill.billNumber}</span>
+            <span className="catalog-field-hint">
+              Available actions reflect current status ({statusDisplay.label}) and remaining
+              returnable quantities.
+            </span>
+          </div>
+          <div className="billing-actions-bar">
+            {canCollectPayment ? (
+              <button
+                type="button"
+                className="btn-primary"
+                aria-expanded={activeWorkflow === 'payment'}
+                onClick={() => openWorkflow(activeWorkflow === 'payment' ? null : 'payment')}
+              >
+                Record Payment ({formatInrDisplay(bill.balanceDue)} due)
+              </button>
+            ) : null}
+            {canEdit ? (
+              <button
+                type="button"
+                className="btn-secondary"
+                aria-expanded={activeWorkflow === 'edit'}
+                onClick={() => openWorkflow(activeWorkflow === 'edit' ? null : 'edit')}
+              >
+                Edit Bill
+              </button>
+            ) : null}
+            {canReturnOrExchange ? (
+              <>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  aria-expanded={activeWorkflow === 'return'}
+                  onClick={() => openWorkflow(activeWorkflow === 'return' ? null : 'return')}
+                >
+                  Return Items
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  aria-expanded={activeWorkflow === 'exchange'}
+                  onClick={() => openWorkflow(activeWorkflow === 'exchange' ? null : 'exchange')}
+                >
+                  Exchange Items
+                </button>
+              </>
+            ) : null}
+            {canCancel ? (
+              <button
+                type="button"
+                className="btn-secondary"
+                aria-expanded={activeWorkflow === 'cancel'}
+                onClick={() => openWorkflow(activeWorkflow === 'cancel' ? null : 'cancel')}
+              >
+                Cancel Bill
+              </button>
+            ) : null}
+          </div>
+        </section>
+      )}
+
+      {confirmation?.kind === 'return' ? (
+        <ReturnConfirmationBanner message={confirmation.message} result={confirmation.result} />
+      ) : confirmation?.kind === 'exchange' ? (
+        <ExchangeConfirmationBanner message={confirmation.message} result={confirmation.result} />
+      ) : confirmation ? (
+        <div className="surface-card alert-banner--success" role="status">
+          <p>
+            <strong>{confirmation.message}</strong>
+          </p>
+        </div>
+      ) : null}
+
+      {activeWorkflow === 'edit' && canEdit ? (
+        <BillEditWorkflow
+          bill={bill}
+          billing={api}
+          inventory={inventory}
+          catalog={catalog}
+          onReloadBill={reloadBill}
+          onCancelWorkflow={() => setActiveWorkflow(null)}
+          onSuccess={({ message, result, stockChanged }) => {
+            setActiveWorkflow(null);
+            setSelectedRevisionOverride(null);
+            setConfirmation({ kind: 'edit', message, result });
+            void refreshDependentCaches(stockChanged);
+          }}
+        />
+      ) : null}
+
+      {activeWorkflow === 'return' && canReturnOrExchange ? (
+        <BillReturnWorkflow
+          bill={bill}
+          api={api}
+          onReloadBill={reloadBill}
+          onCancelWorkflow={() => setActiveWorkflow(null)}
+          onSuccess={({ message, result, stockChanged }) => {
+            setActiveWorkflow(null);
+            setSelectedRevisionOverride(null);
+            setConfirmation({ kind: 'return', message, result });
+            void refreshDependentCaches(stockChanged);
+          }}
+        />
+      ) : null}
+
+      {activeWorkflow === 'exchange' && canReturnOrExchange ? (
+        <BillExchangeWorkflow
+          bill={bill}
+          billing={api}
+          inventory={inventory}
+          catalog={catalog}
+          onReloadBill={reloadBill}
+          onCancelWorkflow={() => setActiveWorkflow(null)}
+          onSuccess={({ message, result, stockChanged }) => {
+            setActiveWorkflow(null);
+            setSelectedRevisionOverride(null);
+            setConfirmation({ kind: 'exchange', message, result });
+            void refreshDependentCaches(stockChanged);
+          }}
+        />
+      ) : null}
+
+      {activeWorkflow === 'cancel' && canCancel ? (
+        <BillCancelWorkflow
+          bill={bill}
+          api={api}
+          onReloadBill={reloadBill}
+          onCancelWorkflow={() => setActiveWorkflow(null)}
+          onSuccess={({ message, result, stockChanged }) => {
+            setActiveWorkflow(null);
+            setSelectedRevisionOverride(null);
+            setConfirmation({ kind: 'cancel', message, result });
+            void refreshDependentCaches(stockChanged);
+          }}
+        />
+      ) : null}
+
+      {activeWorkflow === 'payment' && canCollectPayment ? (
+        <CollectCreditPaymentWorkflow
+          bill={bill}
+          api={api}
+          onReloadBill={reloadBill}
+          onCancelWorkflow={() => setActiveWorkflow(null)}
+          onSuccess={({ message, result, stockChanged }) => {
+            setActiveWorkflow(null);
+            setConfirmation({ kind: 'payment', message, result });
+            void refreshDependentCaches(stockChanged);
+          }}
+        />
+      ) : null}
+
       {pdfError ? (
         <div className="alert-banner alert-banner--error" role="alert">
           <div className="alert-banner__content">
@@ -227,6 +475,12 @@ export function BillDetailPage({ api = billingApi }: BillDetailPageProps) {
                 <span aria-hidden="true">{statusDisplay.symbol}</span>
                 <span>{statusDisplay.label}</span>
               </span>
+            </dd>
+          </div>
+          <div>
+            <dt>Revision / Version</dt>
+            <dd>
+              Rev {bill.currentRevisionNumber} · v{bill.version}
             </dd>
           </div>
           <div>
@@ -280,7 +534,8 @@ export function BillDetailPage({ api = billingApi }: BillDetailPageProps) {
         >
           <table className="catalog-table">
             <caption className="visually-hidden">
-              Saved billed items with quantity, unit selling price, discount, and line total
+              Saved billed items with sold, returned, and remaining returnable quantities, prices,
+              and totals
             </caption>
             <thead>
               <tr>
@@ -289,6 +544,12 @@ export function BillDetailPage({ api = billingApi }: BillDetailPageProps) {
                 <th scope="col">Size</th>
                 <th scope="col" className="cell-num">
                   Qty
+                </th>
+                <th scope="col" className="cell-num">
+                  Returned
+                </th>
+                <th scope="col" className="cell-num">
+                  Returnable
                 </th>
                 <th scope="col" className="cell-num">
                   Unit selling price
@@ -304,20 +565,19 @@ export function BillDetailPage({ api = billingApi }: BillDetailPageProps) {
             <tbody>
               {bill.lines.map((line) => (
                 <tr key={line.billLineId}>
-                  <th scope="row">
-                    {line.productName}
-                    {line.returnedQuantity > 0 ? (
-                      <div className="catalog-field-hint">
-                        Returned: {line.returnedQuantity} · Returnable: {line.returnableQuantity}
-                      </div>
-                    ) : null}
-                  </th>
+                  <th scope="row">{line.productName}</th>
                   <td data-label="SKU" className="cell-code">
                     <code>{line.skuCode}</code>
                   </td>
                   <td data-label="Size">{line.size ?? '—'}</td>
                   <td data-label="Qty" className="cell-num">
                     {line.quantity}
+                  </td>
+                  <td data-label="Returned" className="cell-num">
+                    {line.returnedQuantity}
+                  </td>
+                  <td data-label="Returnable" className="cell-num">
+                    {line.returnableQuantity}
                   </td>
                   <td data-label="Unit selling price" className="cell-num">
                     {formatInrDisplay(line.unitSellingPrice)}
@@ -335,17 +595,17 @@ export function BillDetailPage({ api = billingApi }: BillDetailPageProps) {
         </div>
       </section>
 
-      <section className="surface-card catalog-results-card" aria-label="Payments and credit entries">
+      <section className="surface-card catalog-results-card" aria-label="Payments and refunds">
         <div className="catalog-results-bar">
           <span id={paymentsCaptionId} className="catalog-results-count">
-            Recorded payments ({bill.payments.length})
+            Payments &amp; refunds ({bill.payments.length})
           </span>
         </div>
 
         {bill.payments.length === 0 ? (
           <div className="catalog-empty-state">
             <p>
-              No payments recorded at checkout (balance due: {formatInrDisplay(bill.balanceDue)}).
+              No payments or refunds recorded (balance due: {formatInrDisplay(bill.balanceDue)}).
             </p>
           </div>
         ) : (
@@ -357,7 +617,7 @@ export function BillDetailPage({ api = billingApi }: BillDetailPageProps) {
           >
             <table className="catalog-table">
               <caption className="visually-hidden">
-                Payments recorded on this bill
+                Payments and refunds recorded on this bill
               </caption>
               <thead>
                 <tr>
@@ -376,6 +636,7 @@ export function BillDetailPage({ api = billingApi }: BillDetailPageProps) {
                     <th scope="row">{payment.direction}</th>
                     <td data-label="Mode">{payment.mode}</td>
                     <td data-label="Amount" className="cell-num">
+                      {payment.direction === 'REFUND' ? '-' : ''}
                       {formatInrDisplay(payment.amount)}
                     </td>
                     <td data-label="Reference">{payment.reference ?? '—'}</td>
@@ -387,6 +648,50 @@ export function BillDetailPage({ api = billingApi }: BillDetailPageProps) {
           </div>
         )}
       </section>
+
+      {bill.events.length > 0 ? (
+        <section className="surface-card catalog-results-card" aria-label="Bill audit and corrections">
+          <div className="catalog-results-bar">
+            <span id={eventsCaptionId} className="catalog-results-count">
+              Billing &amp; correction events ({bill.events.length})
+            </span>
+          </div>
+          <div
+            tabIndex={0}
+            role="region"
+            aria-labelledby={eventsCaptionId}
+            className="catalog-table-wrapper"
+          >
+            <table className="catalog-table">
+              <caption className="visually-hidden">
+                Issue, revision, return, exchange, and cancellation events for this bill
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Event</th>
+                  <th scope="col" className="cell-num">
+                    Revision
+                  </th>
+                  <th scope="col">Reason</th>
+                  <th scope="col">Occurred at</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bill.events.map((ev) => (
+                  <tr key={ev.eventId}>
+                    <th scope="row">{ev.eventType}</th>
+                    <td data-label="Revision" className="cell-num">
+                      Rev {ev.revisionNumber}
+                    </td>
+                    <td data-label="Reason">{ev.reason ?? '—'}</td>
+                    <td data-label="Occurred at">{formatShopTimestamp(ev.occurredAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
 
       <BillPrintPreviewModal
         open={isPrintModalOpen}
